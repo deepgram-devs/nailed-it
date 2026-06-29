@@ -197,7 +197,7 @@ function logEvent(tag: string, evt: any) {
       break;
     case "AgentStartedSpeaking":
       console.log(
-        `${tag} <- AgentStartedSpeaking total=${(evt.total_latency * 1000) | 0}ms ttt=${(evt.ttt_latency * 1000) | 0}ms tts=${(evt.tts_latency * 1000) | 0}ms`,
+        `${tag} <- AgentStartedSpeaking total=${Math.round(evt.total_latency * 1000)}ms ttt=${Math.round(evt.ttt_latency * 1000)}ms tts=${Math.round(evt.tts_latency * 1000)}ms`,
       );
       break;
     case "Error":
