@@ -167,7 +167,7 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
+  gap: 18px;
   min-height: 0;
 }
 .line .label {
@@ -196,7 +196,7 @@ main {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
 }
 .openers-label {
   color: var(--muted);
