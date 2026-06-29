@@ -17,21 +17,10 @@
     <div id="pipeline" class="pipeline" aria-label="active model pipeline"></div>
 
     <main>
-      <section class="stage">
-        <!-- Jingle verdict stamp: stamped NAILED IT / MISSED IT once the agent's completion lands. -->
-        <div id="verdict" class="verdict" aria-hidden="true"></div>
-        <div class="line">
-          <div class="label">you said</div>
-          <div id="userText" class="user-text">—</div>
-        </div>
-        <div class="line">
-          <div class="label">…the agent finishes</div>
-          <div id="agentText" class="agent-text">—</div>
-        </div>
-
-        <!-- Seed lines so nobody freezes. Curated from FRAGMENTS.md, rotated on a timer. -->
+      <!-- Step 1 — pick a prompt. Seed lines so nobody freezes; curated from FRAGMENTS.md, rotated on a timer. -->
+      <section class="openers-step">
+        <div class="step-head"><span class="step-num">1</span> try an opener</div>
         <div class="openers">
-          <span class="openers-label">try an opener</span>
           <span id="openerChips" class="opener-chips"></span>
           <span id="openerCountdown" class="opener-countdown">
             <span class="opener-controls">
@@ -63,9 +52,25 @@
         </div>
       </section>
 
+      <!-- Step 2 — the exchange: what you said and how the agent finishes it. -->
+      <section class="stage">
+        <div class="step-head"><span class="step-num">2</span> the exchange</div>
+        <!-- Jingle verdict stamp: stamped NAILED IT / MISSED IT once the agent's completion lands. -->
+        <div id="verdict" class="verdict" aria-hidden="true"></div>
+        <div class="line">
+          <div class="label">you said</div>
+          <div id="userText" class="user-text">—</div>
+        </div>
+        <div class="line">
+          <div class="label">…the agent finishes</div>
+          <div id="agentText" class="agent-text">—</div>
+        </div>
+      </section>
+
+      <!-- Step 3 — the payoff: how fast the first word came back. -->
       <section class="hud">
         <div class="hud-head">
-          <span>time to first word</span>
+          <span class="step-head"><span class="step-num">3</span> time to first word</span>
           <span class="legend">
             <i class="sw flux"></i> turn-taking (derived) <i class="sw purple"></i> LLM <i class="sw teal"></i> Aura TTS
           </span>

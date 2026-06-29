@@ -185,7 +185,8 @@ let openersPaused = false;
 
 function renderOpeners() {
   const list = openerList();
-  const wrap = els.openerChips.closest(".openers");
+  // Hide the whole numbered step (badge + chips) when there's nothing to prompt with.
+  const wrap = els.openerChips.closest(".openers-step");
   if (!list.length) {
     if (wrap) wrap.style.display = "none";
     return;
