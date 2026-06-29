@@ -163,9 +163,35 @@ main {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-rows: 1fr auto;
+  /* Step 1 (openers) and step 3 (HUD) hug their content; step 2 (the exchange) fills the rest. */
+  grid-template-rows: auto 1fr auto;
   gap: 20px;
   padding: 24px var(--gutter);
+}
+
+/* Numbered steps — guide the eye first → next → last (openers, exchange, latency). */
+.step-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--purple);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  flex: none;
 }
 
 .stage {
@@ -235,20 +261,14 @@ main {
 }
 
 /* Seed-line chips — subtle prompts, not a panel. */
+.openers-step .step-head {
+  margin-bottom: 10px;
+}
 .openers {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 4px;
-  margin-bottom: 12px;
-}
-.openers-label {
-  color: var(--muted);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-right: 4px;
 }
 .opener-chips {
   display: inline-flex;
