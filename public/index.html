@@ -33,7 +33,30 @@
         <div class="openers">
           <span class="openers-label">try an opener</span>
           <span id="openerChips" class="opener-chips"></span>
-          <span id="openerCountdown" class="opener-countdown" title="click or press P to pause / resume">
+          <span id="openerCountdown" class="opener-countdown">
+            <span class="opener-controls">
+              <button
+                id="openerPrev"
+                class="opener-btn"
+                type="button"
+                title="Previous (←)"
+                aria-label="Previous openers"
+              >
+                ⏮
+              </button>
+              <button
+                id="openerPlay"
+                class="opener-btn"
+                type="button"
+                title="Pause / resume (P)"
+                aria-label="Pause or resume rotation"
+              >
+                ⏸
+              </button>
+              <button id="openerNext" class="opener-btn" type="button" title="Next (→)" aria-label="Next openers">
+                ⏭
+              </button>
+            </span>
             <span id="openerCount" class="opener-count"></span>
             <span class="opener-progress"><i id="openerProgress"></i></span>
           </span>
@@ -76,6 +99,7 @@
       <span id="bestEver" class="best-ever"></span>
       <span class="hint">
         <kbd>R</kbd> reset socket &nbsp;·&nbsp; <kbd>Space</kbd> mute mic &nbsp;·&nbsp; <kbd>P</kbd> pause openers
+        &nbsp;·&nbsp; <kbd>←</kbd>/<kbd>→</kbd> prev / next opener
       </span>
     </footer>
 

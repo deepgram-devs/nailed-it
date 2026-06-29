@@ -278,8 +278,42 @@ main {
   align-items: center;
   gap: 8px;
   margin-left: 4px;
-  cursor: pointer;
   user-select: none;
+}
+.opener-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.opener-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    background 0.12s ease;
+}
+.opener-btn:hover,
+.opener-btn:active {
+  color: var(--ink);
+  background: var(--hair);
+}
+.opener-btn:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 1px;
+}
+.opener-countdown.paused .opener-btn {
+  color: var(--purple);
 }
 .opener-count {
   color: var(--muted);
@@ -866,5 +900,15 @@ kbd {
   .hint,
   .key-hint {
     display: none;
+  }
+  /* The transport buttons are the only way to drive the rotation once the
+     keyboard hints are gone — size them up to a comfortable tap target. */
+  .opener-controls {
+    gap: 4px;
+  }
+  .opener-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
   }
 }

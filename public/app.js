@@ -21,6 +21,9 @@ const els = {
   openerCountdown: document.getElementById("openerCountdown"),
   openerCount: document.getElementById("openerCount"),
   openerProgress: document.getElementById("openerProgress"),
+  openerPrev: document.getElementById("openerPrev"),
+  openerPlay: document.getElementById("openerPlay"),
+  openerNext: document.getElementById("openerNext"),
   verdict: document.getElementById("verdict"),
   bars: document.getElementById("bars"),
   provenance: document.getElementById("provenance"),
@@ -217,6 +220,25 @@ function updateOpenerCount() {
   if (els.openerCount) els.openerCount.textContent = openersPaused ? "paused" : `next in ${openerRemaining}s`;
 }
 
+// Keep the play/pause button glyph in sync: ▶ to resume when frozen, ⏸ to pause when running.
+function updateOpenerPlayBtn() {
+  if (!els.openerPlay) return;
+  els.openerPlay.textContent = openersPaused ? "▶" : "⏸";
+  els.openerPlay.title = openersPaused ? "Resume (P)" : "Pause (P)";
+  els.openerPlay.setAttribute("aria-label", openersPaused ? "Resume rotation" : "Pause rotation");
+}
+
+// Jump the visible window forward (dir = +1) or back (dir = -1) by one full page, then
+// restart the countdown. Honors the paused state: stepping while frozen stays frozen.
+function stepOpeners(dir) {
+  const list = openerList();
+  const step = openerVisible();
+  if (list.length <= step) return; // nothing to rotate through
+  openerIdx = (openerIdx + dir * step + list.length) % list.length;
+  renderOpeners();
+  beginOpenerCycle();
+}
+
 function beginOpenerCycle() {
   openerRemaining = openerStepSec;
   updateOpenerCount();
@@ -228,6 +250,7 @@ function startOpenerRotation() {
   openerIdx = 0;
   openersPaused = false;
   els.openerCountdown.classList.remove("paused");
+  updateOpenerPlayBtn();
   renderOpeners();
 
   const list = openerList();
@@ -260,6 +283,7 @@ function toggleOpenersPause() {
   els.openerCountdown.classList.toggle("paused", openersPaused);
   if (els.openerProgress) els.openerProgress.style.animationPlayState = openersPaused ? "paused" : "running";
   updateOpenerCount();
+  updateOpenerPlayBtn();
 }
 
 const clampPct = (n) => Math.max(0, Math.min(100, n));
@@ -689,7 +713,9 @@ function toggleMute() {
 els.startBtn.addEventListener("click", () => start());
 els.resetBtn.addEventListener("click", () => started && reset());
 els.muteBtn.addEventListener("click", () => toggleMute());
-els.openerCountdown.addEventListener("click", () => toggleOpenersPause());
+els.openerPrev.addEventListener("click", () => stepOpeners(-1));
+els.openerPlay.addEventListener("click", () => toggleOpenersPause());
+els.openerNext.addEventListener("click", () => stepOpeners(1));
 
 document.addEventListener("keydown", (e) => {
   if (e.repeat) return;
@@ -702,6 +728,10 @@ document.addEventListener("keydown", (e) => {
     if (started) reset();
   } else if (e.key === "p" || e.key === "P") {
     toggleOpenersPause();
+  } else if (e.key === "ArrowLeft") {
+    stepOpeners(-1);
+  } else if (e.key === "ArrowRight") {
+    stepOpeners(1);
   } else if (e.code === "Space" && started) {
     e.preventDefault();
     toggleMute();
