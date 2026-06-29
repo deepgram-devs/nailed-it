@@ -1,0 +1,30 @@
+{
+  "name": "finish-my-sentence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Deepgram x Together AI live voice demo: speak the start of a sentence, the agent snaps the ending, with a live latency HUD.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server/proxy.ts",
+    "start": "tsx src/server/proxy.ts",
+    "check": "tsx src/server/check.ts",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "prettier": "^3.9.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

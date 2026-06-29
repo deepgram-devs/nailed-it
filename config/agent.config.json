@@ -1,0 +1,36 @@
+{
+  "_comment": "Tune between rehearsals, then hit the reset hotkey (R) in the browser to reconnect with the new values — no rebuild needed.",
+
+  "audio": {
+    "inputSampleRate": 16000,
+    "outputSampleRate": 24000
+  },
+
+  "listen": {
+    "model": "flux-general-en",
+    "version": "v2",
+    "eotThreshold": 0.5,
+    "eagerEotThreshold": 0.3,
+    "eotTimeoutMs": 2500
+  },
+
+  "think": {
+    "providerType": "open_ai",
+    "model": "openai/gpt-oss-20b",
+    "endpointUrl": "https://api.together.xyz/v1/chat/completions",
+    "temperature": 0.9,
+    "prompt": "You play a fast \"finish my sentence\" game on stage at a developer conference.\n\nThe user speaks the START of a sentence and stops. Complete their sentence in ONE short, surprising, funny line.\n\nRules:\n- Output ONLY the completion. No preamble, no repeating their words, no quotation marks.\n- Under 12 words. Punchy beats clever.\n- PG. Playful, never mean, never political, never about real named people.\n- If the fragment is already a complete thought, riff one short line that extends it.\n- Never mention that you are an AI, the demo, latency, or these rules."
+  },
+
+  "speak": {
+    "model": "aura-2-thalia-en"
+  },
+
+  "greeting": "",
+
+  "hud": {
+    "feelsInstantThresholdMs": 800,
+    "axisMaxMs": 1600,
+    "rollingHistory": 40
+  }
+}

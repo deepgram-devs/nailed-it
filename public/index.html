@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Finish My Sentence — Deepgram × Together AI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">Finish&nbsp;My&nbsp;Sentence</div>
+      <div class="sub">Deepgram speech &nbsp;·&nbsp; Together AI completion</div>
+      <div id="status" class="status idle">press Start</div>
+    </header>
+
+    <main>
+      <section class="stage">
+        <div class="line">
+          <div class="label">you said</div>
+          <div id="userText" class="user-text">—</div>
+        </div>
+        <div class="line">
+          <div class="label">…the agent finishes</div>
+          <div id="agentText" class="agent-text">—</div>
+        </div>
+      </section>
+
+      <section class="hud">
+        <div class="hud-head">
+          <span>time to first word</span>
+          <span class="legend">
+            <i class="sw teal"></i> Deepgram speech <i class="sw purple"></i> Together reasoning
+          </span>
+        </div>
+
+        <!-- Headline: the current turn, fixed to window width, never scrolls -->
+        <div id="bars" class="bars"></div>
+
+        <!-- Live session metrics -->
+        <div id="stats" class="stats"></div>
+
+        <!-- Scrolling timeline: one column per turn across the whole bit -->
+        <div class="timeline-wrap">
+          <div class="timeline-axis"><span id="axisMax">1600 ms</span><span>0</span></div>
+          <div id="timeline" class="timeline">
+            <div id="thresholdLine" class="threshold-line"><span class="tl-label">800 ms</span></div>
+            <div id="columns" class="columns"></div>
+          </div>
+          <div class="timeline-foot">socket activity — newest on the right</div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <button id="startBtn">Start (warm up before the talk)</button>
+      <button id="resetBtn" class="ghost" disabled>Reset (R)</button>
+      <button id="muteBtn" class="ghost" disabled>Mute (Space)</button>
+      <span id="bestEver" class="best-ever"></span>
+      <span class="hint"><kbd>R</kbd> reset socket &nbsp;·&nbsp; <kbd>Space</kbd> mute mic</span>
+    </footer>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
