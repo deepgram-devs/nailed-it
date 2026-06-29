@@ -196,6 +196,7 @@ main {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
+  margin-bottom: 18px;
 }
 .openers-label {
   color: var(--muted);
