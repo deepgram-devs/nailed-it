@@ -316,6 +316,10 @@ main {
 .bars {
   min-height: 36px;
 }
+/* Before the first turn there's no bar — don't reserve the gap. */
+.bars:empty {
+  min-height: 0;
+}
 .bar-row {
   display: flex;
   align-items: center;
@@ -424,6 +428,10 @@ main {
   font-variant-numeric: tabular-nums;
   min-height: 14px;
   letter-spacing: 0.3px;
+}
+/* No request_id yet (pre-connect / reconnecting) — collapse rather than leave a blank band. */
+.hud-source:empty {
+  display: none;
 }
 .live-dot {
   width: 7px;
