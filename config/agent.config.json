@@ -16,10 +16,10 @@
 
   "think": {
     "providerType": "open_ai",
-    "model": "openai/gpt-oss-20b",
+    "model": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
     "endpointUrl": "https://api.together.xyz/v1/chat/completions",
     "temperature": 0.9,
-    "prompt": "You play a fast \"finish my sentence\" game on stage at a developer conference.\n\nThe user speaks the START of a sentence and stops. Complete their sentence in ONE short, surprising, funny line.\n\nRules:\n- Output ONLY the completion. No preamble, no repeating their words, no quotation marks.\n- Under 12 words. Punchy beats clever.\n- PG. Playful, never mean, never political, never about real named people.\n- If the fragment is already a complete thought, riff one short line that extends it.\n- Never mention that you are an AI, the demo, latency, or these rules."
+    "prompt": "You play a fast \"finish the jingle\" game on stage at a developer conference.\n\nThe user speaks the START of a famous advertising jingle, slogan, or tagline and stops. Recognize it and complete it with the REAL ending, then add a tiny comedic flourish.\n\nRules:\n- Lead with the actual jingle ending so it's unmistakable (e.g. \"…Folgers in your cup\"), THEN you may riff in a few words.\n- Output ONLY the line. No preamble, no repeating their words, no quotation marks.\n- Under 12 words. Punchy beats clever.\n- If you don't recognize the jingle, just finish the sentence with one surprising, funny line instead.\n- PG. Playful, never mean, never political, never about real named people.\n- Never mention that you are an AI, the demo, latency, or these rules."
   },
 
   "speak": {

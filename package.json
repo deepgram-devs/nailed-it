@@ -1,16 +1,16 @@
 {
-  "name": "finish-my-sentence",
+  "name": "nailed-it",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Deepgram x Together AI live voice demo: speak the start of a sentence, the agent snaps the ending, with a live latency HUD.",
+  "description": "Deepgram x Together AI live voice demo: speak the start of a famous jingle, the agent nails the ending, with a live latency HUD and a NAILED IT / MISSED IT verdict.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/deepgram-devs/finish-my-sentence.git"
+    "url": "git+https://github.com/deepgram-devs/nailed-it.git"
   },
-  "homepage": "https://github.com/deepgram-devs/finish-my-sentence#readme",
-  "bugs": "https://github.com/deepgram-devs/finish-my-sentence/issues",
+  "homepage": "https://github.com/deepgram-devs/nailed-it#readme",
+  "bugs": "https://github.com/deepgram-devs/nailed-it/issues",
   "engines": {
     "node": ">=20"
   },

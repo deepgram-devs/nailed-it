@@ -66,7 +66,7 @@ Sent once by the proxy on connect (built in [`src/server/agent.ts`](../src/serve
         "url": "https://api.together.xyz/v1/chat/completions",
         "headers": { "Authorization": "Bearer <TOGETHER_API_KEY>" },
       },
-      "prompt": "…the finish-my-sentence system prompt…",
+      "prompt": "…the nailed-it system prompt…",
     },
     "speak": { "provider": { "type": "deepgram", "model": "aura-2-thalia-en" } },
     "greeting": "",

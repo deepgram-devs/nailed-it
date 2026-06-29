@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Finish My Sentence — Deepgram × Together AI</title>
+    <title>Nailed It — Deepgram × Together AI</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <header>
-      <div class="brand">Finish&nbsp;My&nbsp;Sentence</div>
-      <div class="sub">Deepgram speech &nbsp;·&nbsp; Together AI completion</div>
+      <div class="brand">Nailed&nbsp;It</div>
+      <div class="sub">finish the jingle &nbsp;·&nbsp; Deepgram speech &nbsp;·&nbsp; Together AI completion</div>
       <div id="status" class="status idle">press Start</div>
     </header>
 
@@ -18,6 +18,8 @@
 
     <main>
       <section class="stage">
+        <!-- Jingle verdict stamp: stamped NAILED IT / MISSED IT once the agent's completion lands. -->
+        <div id="verdict" class="verdict" aria-hidden="true"></div>
         <div class="line">
           <div class="label">you said</div>
           <div id="userText" class="user-text">—</div>

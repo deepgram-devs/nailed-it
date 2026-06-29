@@ -30,7 +30,7 @@ if (!thinkKey.value)
 
 const settings = buildSettings(cfg, thinkKey.value);
 
-console.log(`\n  Finish My Sentence — connection check`);
+console.log(`\n  Nailed It — connection check`);
 console.log(`  listen ${cfg.listen.model}   think ${cfg.think.model}   speak ${cfg.speak.model}`);
 console.log(`  fragment: "${TEST_FRAGMENT}"\n`);
 
