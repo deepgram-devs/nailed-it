@@ -3,7 +3,7 @@
 > Speak the **start** of a sentence, stop, and a voice agent snaps the ending in one funny
 > line — with a live HUD showing the time-to-first-word latency budget being hit in real time.
 
-[![CI](https://github.com/dg-coreylweathers/finish-my-sentence/actions/workflows/ci.yml/badge.svg)](https://github.com/dg-coreylweathers/finish-my-sentence/actions/workflows/ci.yml)
+[![CI](https://github.com/deepgram-devs/finish-my-sentence/actions/workflows/ci.yml/badge.svg)](https://github.com/deepgram-devs/finish-my-sentence/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-1D9E75.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-%E2%89%A520-7F77DD.svg)](.nvmrc)
 
