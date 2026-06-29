@@ -119,7 +119,11 @@ wss.on("connection", (client) => {
   upstream.binaryType = "nodebuffer";
 
   let upstreamReady = false;
+  // Mic chunks captured before SettingsApplied, flushed once the agent is ready.
+  // Bounded so a connection that never readies can't grow this without limit
+  // (~80 ms/chunk → ~8 s of audio); we drop the oldest past the cap.
   const preReadyAudio: Buffer[] = [];
+  const PRE_READY_MAX_CHUNKS = 100;
   let keepAlive: NodeJS.Timeout | undefined;
 
   upstream.on("open", () => {
@@ -156,6 +160,7 @@ wss.on("connection", (client) => {
     if (isBinary) {
       if (!upstreamReady) {
         preReadyAudio.push(Buffer.from(data));
+        if (preReadyAudio.length > PRE_READY_MAX_CHUNKS) preReadyAudio.shift();
         return;
       }
       if (upstream.readyState === WebSocket.OPEN) upstream.send(data, { binary: true });
