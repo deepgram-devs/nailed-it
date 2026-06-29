@@ -9,6 +9,11 @@
   --good: #2ecc71;
   --bad: #ff5d5d;
   --hair: #1e2630;
+
+  /* Layout tokens — redefined per breakpoint so the responsive rules
+     only restate what actually changes. */
+  --gutter: 32px; /* horizontal page padding: header, pipeline, main, footer */
+  --radius-panel: 16px; /* HUD / large panels */
 }
 
 * {
@@ -33,7 +38,7 @@ body {
 }
 
 header {
-  padding: 18px 32px;
+  padding: 18px var(--gutter);
   display: flex;
   align-items: baseline;
   gap: 18px;
@@ -55,7 +60,7 @@ header {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 10px 32px;
+  padding: 10px var(--gutter);
   border-bottom: 1px solid var(--hair);
   background: #0e141b;
   font-size: 13px;
@@ -160,7 +165,7 @@ main {
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 20px;
-  padding: 24px 32px;
+  padding: 24px var(--gutter);
 }
 
 .stage {
@@ -314,7 +319,7 @@ main {
 .hud {
   background: var(--panel);
   border: 1px solid var(--hair);
-  border-radius: 16px;
+  border-radius: var(--radius-panel);
   padding: 18px 22px;
 }
 .hud-head {
@@ -607,7 +612,7 @@ main {
 }
 
 footer {
-  padding: 16px 32px;
+  padding: 16px var(--gutter);
   border-top: 1px solid var(--hair);
   display: flex;
   align-items: center;
@@ -648,4 +653,218 @@ kbd {
   padding: 2px 7px;
   font-family: ui-monospace, monospace;
   font-size: 12px;
+}
+
+/* ============================================================
+   Responsive — tablet & phone.
+   The projector/desktop view is a fixed, no-scroll HUD. Smaller
+   screens can't fit the whole model chain in one screenful, so
+   below 960px the page is allowed to scroll, paddings tighten, and
+   the header/footer stack. On phones (<=600px) secondary panels are
+   trimmed so the verdict + latency lead, and keyboard-only hints
+   (useless without a keyboard) are hidden.
+   ============================================================ */
+
+@media (max-width: 960px) {
+  /* Tighten the page gutter once; header/pipeline/main/footer all read
+     it from --gutter. */
+  :root {
+    --gutter: 20px;
+  }
+
+  /* Let the page breathe and scroll — the no-scroll constraint is a
+     projector concern, not a phone one. */
+  body {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  header {
+    padding-block: 14px;
+    gap: 8px 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  /* Tagline drops to its own line so the brand + status sit on top. */
+  .sub {
+    flex-basis: 100%;
+    order: 3;
+  }
+  .status {
+    margin-left: auto;
+  }
+
+  main {
+    padding-block: 18px;
+    gap: 16px;
+  }
+
+  .hud {
+    padding: 16px 18px;
+  }
+
+  footer {
+    padding-block: 14px;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  :root {
+    --gutter: 16px;
+    --radius-panel: 12px;
+  }
+
+  header {
+    padding-block: 12px;
+    gap: 6px 12px;
+  }
+  .brand {
+    font-size: 19px;
+  }
+  .sub {
+    font-size: 12px;
+  }
+  .status {
+    font-size: 11px;
+    padding: 5px 11px;
+  }
+
+  .pipeline {
+    gap: 8px;
+    font-size: 12px;
+  }
+  /* The Flux end-of-turn knobs are nerdy detail — drop on phones. */
+  .pipe-detail {
+    display: none;
+  }
+
+  main {
+    gap: 14px;
+  }
+
+  /* Stage flows from the top (no vertical centering) so scrolling
+     feels natural and the verdict can't be pushed off-screen. */
+  .stage {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .verdict {
+    font-size: 18px;
+    padding: 4px 12px;
+    letter-spacing: 2px;
+  }
+
+  /* A long opener (e.g. "Gimme a break…") must wrap instead of forcing
+     the page wider than the viewport — nowrap chips were the source of
+     the horizontal overflow that clipped the header/stats/footer. */
+  .opener-chip {
+    white-space: normal;
+    max-width: 100%;
+  }
+  .line .label {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+  }
+
+  .hud {
+    padding: 14px;
+  }
+  /* Stack the legend under the title; swatch labels wrap cleanly. */
+  .hud-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .legend {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    font-size: 11px;
+  }
+
+  .bar-total {
+    font-size: 20px;
+    width: 78px;
+  }
+
+  /* Secondary on a phone — the scrolling per-turn history. Hide it so
+     the current verdict + latency own the screen. */
+  .timeline-wrap {
+    display: none;
+  }
+
+  /* Two stats per row instead of a single overflowing line. */
+  .stats {
+    gap: 8px;
+    margin: 12px 0 2px;
+  }
+  .stat {
+    min-width: 0;
+    flex: 1 1 calc(50% - 4px);
+    padding: 8px 12px;
+  }
+
+  footer {
+    gap: 10px;
+  }
+  /* Buttons are the primary controls on touch — comfy tap targets,
+     Start spans the full width as the obvious first action. */
+  button {
+    padding: 13px 18px;
+    flex: 1 1 auto;
+  }
+  #startBtn {
+    flex-basis: 100%;
+  }
+  .best-ever {
+    flex-basis: 100%;
+    order: 5;
+  }
+
+  /* Narrow viewport: the keyboard-hint footer line and the (R)/(Space)
+     button suffixes are clutter without a keyboard. */
+  .hint,
+  .key-hint {
+    display: none;
+  }
+}
+
+/* Tablet range — the vw-based stage type is tuned for a projector, so
+   it reads small on a tablet held at arm's length. Scale the jingle
+   text + supporting labels up so they're legible across the room. */
+@media (min-width: 601px) and (max-width: 960px) {
+  .user-text {
+    font-size: clamp(34px, 6vw, 56px);
+  }
+  .agent-text {
+    font-size: clamp(40px, 7.4vw, 70px);
+  }
+  .line .label {
+    font-size: 15px;
+  }
+  .pipeline {
+    font-size: 15px;
+  }
+  .hud-head {
+    font-size: 14px;
+  }
+  .stat-v {
+    font-size: 22px;
+  }
+  .bar-total {
+    font-size: 24px;
+  }
+}
+
+/* Touch-primary devices (e.g. a tablet wider than 600px): keyboard
+   affordances are meaningless without a keyboard, so hide them too. */
+@media (hover: none) and (pointer: coarse) {
+  .hint,
+  .key-hint {
+    display: none;
+  }
 }
