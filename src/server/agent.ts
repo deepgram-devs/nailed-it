@@ -32,8 +32,14 @@ export type AgentConfig = {
   };
   speak: { model: string };
   greeting: string;
+  // Opener chip rotation, surfaced on the HUD so it must be tunable here (lines come from
+  // FRAGMENTS.md). Optional — falls back to OPENERS_DEFAULTS if absent.
+  openers?: { visible: number; rotateMs: number };
   hud: { feelsInstantThresholdMs: number; axisMaxMs: number; rollingHistory: number };
 };
+
+/** Fallback opener rotation if `openers` is missing from config. */
+export const OPENERS_DEFAULTS = { visible: 3, rotateMs: 6000 };
 
 /** Default env var for the think provider's key. Together is the demo's default LLM. */
 export const DEFAULT_THINK_API_KEY_ENV = "TOGETHER_API_KEY";
@@ -59,6 +65,15 @@ export function loadOpeners(): string[] {
   } catch {
     return [];
   }
+}
+
+/** Opener chips for the HUD: the lines (from FRAGMENTS.md) plus the configurable rotation knobs. */
+export function openersPayload(cfg: AgentConfig) {
+  return {
+    lines: loadOpeners(),
+    visible: cfg.openers?.visible ?? OPENERS_DEFAULTS.visible,
+    rotateMs: cfg.openers?.rotateMs ?? OPENERS_DEFAULTS.rotateMs,
+  };
 }
 
 /**

@@ -78,7 +78,8 @@ re-reads it on every connection, so edit, then press **R** in the browser to rec
 
 - **The game:** `think.prompt`.
 - **Model:** `think.model` — `openai/gpt-oss-20b` (fastest) or `meta-llama/Llama-3.3-70B-Instruct-Turbo` (wittier). To run on a different provider (e.g. **Claude** via Anthropic's OpenAI-compatible endpoint), set `think.endpointUrl`, `think.model`, and `think.apiKeyEnv` — see [AGENTS.md](AGENTS.md#how-to-extend-common-asks). For voice, pick a fast model (Claude **Haiku 4.5**); the demo's latency budget rules out heavyweight/thinking models.
-- **Turn-taking (the make-or-break knob):** `listen.eotThreshold` (0.5–0.9; lower fires sooner), `listen.eagerEotThreshold`, `listen.eotTimeoutMs` (hard cap + dead-air safety net). Tune by ear in rehearsal.
+- **Turn-taking (the make-or-break knob):** `listen.eotThreshold` (0.5–0.9; lower fires sooner), `listen.eagerEotThreshold`, `listen.eotTimeoutMs` (hard cap + dead-air safety net). Tune by ear in rehearsal. These values are shown live on the pipeline strip so the audience can see _how_ it decides you stopped.
+- **Openers:** `openers.visible` (chips shown at once) and `openers.rotateMs` (rotation interval). The lines themselves come from [FRAGMENTS.md](FRAGMENTS.md).
 - **HUD:** `hud.feelsInstantThresholdMs` (default 800), `hud.axisMaxMs` (bar/timeline scale), `hud.rollingHistory`.
 
 ## The HUD
@@ -89,6 +90,12 @@ with Deepgram speech teal / Together reasoning purple and a green/red "feels ins
 a **metrics** row (turns, best, median, avg, Together-only avg, "felt instant" %); and a
 scrolling **timeline** column chart across the whole bit. Session stats persist to
 `localStorage` — **Shift+R** clears them.
+
+Above the bar, a **pipeline strip** shows the live model chain (Flux → LLM·provider → Aura)
+with Flux's end-of-turn knobs inline, and the status pill walks the real turn lifecycle —
+_listening → turn detected → thinking → speaking_, with a distinct **barge-in** state when you
+interrupt. A small **provenance** line carries the connection's `request_id` to show the
+latency is read live from `AgentStartedSpeaking`, not canned.
 
 ## Stage controls
 

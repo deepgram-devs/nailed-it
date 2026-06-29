@@ -114,6 +114,8 @@ The client multiplies by 1000 to display milliseconds.
 | `think.apiKeyEnv`                    | Env var holding the provider's Bearer key (default `TOGETHER_API_KEY`). Set to `ANTHROPIC_API_KEY` etc. to swap providers — no code change. |
 | `think.temperature` / `think.prompt` | LLM sampling and the game's system prompt.                                                                                                  |
 | `speak.model`                        | Aura-2 voice.                                                                                                                               |
+| `openers.visible`                    | How many opener chips show at once (default 3).                                                                                             |
+| `openers.rotateMs`                   | Opener rotation interval in ms (default 6000). Lines come from `FRAGMENTS.md`.                                                              |
 | `hud.feelsInstantThresholdMs`        | The "feels instant" line (default 800). Green under, red over.                                                                              |
 | `hud.axisMaxMs`                      | Full-width of the HUD bar/timeline in ms (scaling).                                                                                         |
 | `hud.rollingHistory`                 | How many turn columns the timeline keeps.                                                                                                   |
