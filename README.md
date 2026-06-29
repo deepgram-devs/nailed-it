@@ -95,6 +95,7 @@ scrolling **timeline** column chart across the whole bit. Session stats persist 
 - **Start** — warm everything up _before_ the talk. Don't cold-open live.
 - **Reset (R)** — tear down + re-open the agent socket (recover from a drop). The status pill is the source of truth for live state.
 - **Mute (Space)** — mute/unmute the mic.
+- **Pause openers (P)** — freeze the rotating opener chips (click the countdown too) so you can try all three on screen.
 - **Shift+R** — clear stored stats / timeline.
 
 ## Demo script (run sheet)

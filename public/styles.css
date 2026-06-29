@@ -214,12 +214,17 @@ main {
   align-items: center;
   gap: 8px;
   margin-left: 4px;
+  cursor: pointer;
+  user-select: none;
 }
 .opener-count {
   color: var(--muted);
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+.opener-countdown.paused .opener-count {
+  color: var(--purple);
 }
 .opener-progress {
   width: 44px;
@@ -234,6 +239,17 @@ main {
   background: var(--teal);
   transform-origin: left;
   transform: scaleX(0);
+}
+.opener-countdown.paused .opener-progress i {
+  background: var(--purple);
+}
+@keyframes openerFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .hud {
