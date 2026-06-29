@@ -28,6 +28,11 @@
 
   "greeting": "",
 
+  "openers": {
+    "visible": 3,
+    "rotateMs": 6000
+  },
+
   "hud": {
     "feelsInstantThresholdMs": 800,
     "axisMaxMs": 1600,

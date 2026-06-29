@@ -4,10 +4,11 @@
 
 const STORE_KEY = "fms:v1";
 
-// How many opener chips show at once, and how long before the set rotates (whole seconds,
-// so the countdown reads cleanly).
-const OPENERS_VISIBLE = 3;
-const OPENERS_ROTATE_MS = 6000;
+// Opener rotation is configured server-side (config/agent.config.json → openers) and arrives
+// via /config; these read it with safe fallbacks. Lines come from FRAGMENTS.md.
+const openerList = () => cfg.openers?.lines ?? [];
+const openerVisible = () => cfg.openers?.visible ?? 3;
+const openerRotateMs = () => cfg.openers?.rotateMs ?? 6000;
 
 const els = {
   status: document.getElementById("status"),
@@ -19,6 +20,7 @@ const els = {
   openerCount: document.getElementById("openerCount"),
   openerProgress: document.getElementById("openerProgress"),
   bars: document.getElementById("bars"),
+  provenance: document.getElementById("provenance"),
   stats: document.getElementById("stats"),
   columns: document.getElementById("columns"),
   timeline: document.getElementById("timeline"),
@@ -39,7 +41,7 @@ let cfg = {
     think: { model: "", provider: "" },
     speak: { model: "" },
   },
-  openers: [],
+  openers: { lines: [], visible: 3, rotateMs: 6000 },
 };
 
 let ws = null;
@@ -51,6 +53,8 @@ let playHead = 0;
 let liveSources = new Set();
 let micMuted = false;
 let started = false;
+let agentSpeaking = false; // true between AgentStartedSpeaking and AgentAudioDone — drives barge-in detection
+let requestId = null; // from Welcome — shown as latency provenance
 
 let turns = []; // session + restored: { total, listen, ttt, tts, under, ts }
 let store = { bestEverMs: null, lifetimeTurns: 0, recent: [] };
@@ -114,12 +118,19 @@ function renderPipeline() {
   const a = cfg.agent;
   if (!a) return;
   const shortModel = (m) => (m && m.includes("/") ? m.split("/").pop() : m) || "—";
+  const L = a.listen;
+  // How Flux decides you've stopped — the real, configurable end-of-turn knobs from /config.
+  const fluxDetail =
+    L.eotThreshold != null
+      ? `EOT ${L.eotThreshold} · eager ${L.eagerEotThreshold} · ${L.eotTimeoutMs / 1000}s cap`
+      : "";
   const stages = [
     {
       cls: "flux",
-      model: `${a.listen.model}${a.listen.version ? ` ${a.listen.version}` : ""}`,
+      model: `${L.model}${L.version ? ` ${L.version}` : ""}`,
       co: "Deepgram",
-      full: a.listen.model,
+      full: L.model,
+      detail: fluxDetail,
     },
     { cls: "purple", model: shortModel(a.think.model), co: a.think.provider || "LLM", full: a.think.model },
     { cls: "teal", model: a.speak.model || "—", co: "Deepgram", full: a.speak.model },
@@ -134,7 +145,7 @@ function renderPipeline() {
     }
     const stage = document.createElement("span");
     stage.className = "pipe-stage";
-    stage.title = s.full || s.model;
+    stage.title = s.detail ? `${s.full} — ${s.detail}` : s.full || s.model;
     const dot = document.createElement("span");
     dot.className = `dot ${s.cls}`;
     const model = document.createElement("span");
@@ -144,13 +155,19 @@ function renderPipeline() {
     co.className = "pipe-co";
     co.textContent = s.co;
     stage.append(dot, model, co);
+    if (s.detail) {
+      const detail = document.createElement("span");
+      detail.className = "pipe-detail";
+      detail.textContent = s.detail;
+      stage.append(detail);
+    }
     nodes.push(stage);
   });
   els.pipeline.replaceChildren(...nodes);
 }
 
 // Opener chips, sourced from /config (FRAGMENTS.md). Purely visual prompts, not interactive.
-// A window of OPENERS_VISIBLE rotates through the full list so guests always see fresh lines.
+// A window of openerVisible() rotates through the full list so guests always see fresh lines.
 // The rotation can be paused (P / click the countdown) so someone can try all three on screen.
 let openerIdx = 0;
 let openerTimer = null;
@@ -159,7 +176,7 @@ let openerStepSec = 0;
 let openersPaused = false;
 
 function renderOpeners() {
-  const list = cfg.openers ?? [];
+  const list = openerList();
   const wrap = els.openerChips.closest(".openers");
   if (!list.length) {
     if (wrap) wrap.style.display = "none";
@@ -167,7 +184,7 @@ function renderOpeners() {
   }
   if (wrap) wrap.style.display = "";
   const shown = [];
-  for (let i = 0; i < Math.min(OPENERS_VISIBLE, list.length); i++) {
+  for (let i = 0; i < Math.min(openerVisible(), list.length); i++) {
     shown.push(list[(openerIdx + i) % list.length]);
   }
   els.openerChips.replaceChildren(
@@ -198,7 +215,7 @@ function updateOpenerCount() {
 function beginOpenerCycle() {
   openerRemaining = openerStepSec;
   updateOpenerCount();
-  restartOpenerProgress(OPENERS_ROTATE_MS);
+  restartOpenerProgress(openerRotateMs());
 }
 
 function startOpenerRotation() {
@@ -208,21 +225,21 @@ function startOpenerRotation() {
   els.openerCountdown.classList.remove("paused");
   renderOpeners();
 
-  const list = cfg.openers ?? [];
+  const list = openerList();
   // Nothing to rotate through — hide the countdown and stop.
-  if (list.length <= OPENERS_VISIBLE) {
+  if (list.length <= openerVisible()) {
     els.openerCountdown.style.display = "none";
     return;
   }
   els.openerCountdown.style.display = "";
 
-  openerStepSec = Math.round(OPENERS_ROTATE_MS / 1000);
+  openerStepSec = Math.round(openerRotateMs() / 1000);
   beginOpenerCycle();
   openerTimer = setInterval(() => {
     if (openersPaused) return; // frozen — hold the current trio
     openerRemaining -= 1;
     if (openerRemaining <= 0) {
-      openerIdx = (openerIdx + OPENERS_VISIBLE) % list.length;
+      openerIdx = (openerIdx + openerVisible()) % list.length;
       renderOpeners();
       beginOpenerCycle();
     } else {
@@ -233,8 +250,7 @@ function startOpenerRotation() {
 
 // Freeze/resume the rotation so all three on-screen openers can be tried.
 function toggleOpenersPause() {
-  const list = cfg.openers ?? [];
-  if (list.length <= OPENERS_VISIBLE) return; // nothing is rotating
+  if (openerList().length <= openerVisible()) return; // nothing is rotating
   openersPaused = !openersPaused;
   els.openerCountdown.classList.toggle("paused", openersPaused);
   if (els.openerProgress) els.openerProgress.style.animationPlayState = openersPaused ? "paused" : "running";
@@ -322,6 +338,9 @@ function connect() {
   ws = new WebSocket(`${proto}://${location.host}/agent`);
   ws.binaryType = "arraybuffer";
   setStatus("connecting", "connecting");
+  agentSpeaking = false;
+  requestId = null;
+  renderProvenance();
 
   ws.onmessage = (ev) => {
     if (typeof ev.data !== "string") return enqueuePcm(ev.data);
@@ -341,26 +360,40 @@ function connect() {
 
 function handleEvent(msg) {
   switch (msg.type) {
+    case "Welcome":
+      // request_id proves the latency below is live off the socket, not canned.
+      requestId = msg.request_id || null;
+      renderProvenance();
+      break;
     case "SettingsApplied":
       setStatus("ready", "ready — speak a fragment");
       break;
-    case "UserStartedSpeaking":
-      flushPlayback(); // barge-in
-      setStatus("listening", "listening");
+    case "UserStartedSpeaking": {
+      // Barge-in = you started talking while the agent was still speaking. Flag it distinctly.
+      const interrupting = agentSpeaking || liveSources.size > 0;
+      flushPlayback();
+      agentSpeaking = false;
+      setStatus(interrupting ? "interrupted" : "listening", interrupting ? "barge-in — interrupted" : "listening");
       break;
+    }
     case "ConversationText":
       if (msg.role === "user") {
+        // Flux fired end-of-turn and handed us the transcript — the "how it knows you stopped" moment.
         els.userText.textContent = msg.content || "—";
         els.agentText.textContent = "…";
+        setStatus("thinking", "turn detected — thinking…");
       } else if (msg.role === "assistant") {
         els.agentText.textContent = msg.content || "—";
       }
       break;
     case "AgentStartedSpeaking":
+      agentSpeaking = true;
       setStatus("speaking", "speaking");
       recordTurn(msg);
+      renderProvenance();
       break;
     case "AgentAudioDone":
+      agentSpeaking = false;
       setStatus("ready", "ready — speak a fragment");
       break;
     case "Error":
@@ -371,6 +404,21 @@ function handleEvent(msg) {
       console.warn("Agent warning:", msg);
       break;
   }
+}
+
+// Provenance line: signals the latency numbers come live from AgentStartedSpeaking, with the
+// connection's request_id from Welcome. Not configurable — it's runtime truth, not a setting.
+function renderProvenance() {
+  if (!els.provenance) return;
+  if (!requestId) {
+    els.provenance.replaceChildren();
+    return;
+  }
+  const dot = document.createElement("span");
+  dot.className = "live-dot";
+  const text = document.createElement("span");
+  text.textContent = `live · latency from AgentStartedSpeaking · req ${requestId.slice(0, 8)}`;
+  els.provenance.replaceChildren(dot, text);
 }
 
 // ── Metrics + HUD ─────────────────────────────────────────────────────────────

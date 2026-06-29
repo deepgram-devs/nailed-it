@@ -92,6 +92,15 @@ header {
   color: var(--muted);
   font-weight: 700;
 }
+/* Flux end-of-turn knobs — answers "how does it know I stopped?" inline. */
+.pipe-detail {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  padding: 1px 7px;
+  border: 1px dashed var(--hair);
+  border-radius: 999px;
+}
 .status {
   margin-left: auto;
   font-size: 13px;
@@ -118,9 +127,18 @@ header {
   color: #58b6ff;
   animation: pulse 1s infinite;
 }
+.status.thinking {
+  background: #201428;
+  color: var(--purple);
+  animation: pulse 1s infinite;
+}
 .status.speaking {
   background: #201428;
   color: var(--purple);
+}
+.status.interrupted {
+  background: #2a2014;
+  color: #f0a64a;
 }
 .status.error {
   background: #2a1414;
@@ -149,7 +167,7 @@ main {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 24px;
+  gap: 18px;
   min-height: 0;
 }
 .line .label {
@@ -178,6 +196,7 @@ main {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 4px;
+  margin-bottom: 12px;
 }
 .openers-label {
   color: var(--muted);
@@ -297,6 +316,10 @@ main {
 .bars {
   min-height: 36px;
 }
+/* Before the first turn there's no bar — don't reserve the gap. */
+.bars:empty {
+  min-height: 0;
+}
 .bar-row {
   display: flex;
   align-items: center;
@@ -392,6 +415,31 @@ main {
   top: -5px;
   bottom: -5px;
   border-left: 2px dashed #5b6675;
+}
+
+/* Provenance — small, muted; a green pulsing dot signals the numbers are live off the socket. */
+.hud-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+  letter-spacing: 0.3px;
+}
+/* No request_id yet (pre-connect / reconnecting) — collapse rather than leave a blank band. */
+.hud-source:empty {
+  display: none;
+}
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+  flex: 0 0 auto;
+  animation: pulse 1.6s infinite;
 }
 
 /* Stats */

@@ -21,7 +21,7 @@ import {
   buildSettings,
   describeAgent,
   loadConfig,
-  loadOpeners,
+  openersPayload,
   resolveThinkApiKey,
 } from "./agent";
 
@@ -66,8 +66,8 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
         inputSampleRate: cfg.audio.inputSampleRate,
         // Non-secret pipeline summary for the HUD strip (no prompt, no keys). See describeAgent.
         agent: describeAgent(cfg),
-        // Opener chips, parsed from FRAGMENTS.md — single source of truth shared with the doc.
-        openers: loadOpeners(),
+        // Opener chips: lines from FRAGMENTS.md (single source of truth) + configurable rotation.
+        openers: openersPayload(cfg),
       }),
     );
     return;
