@@ -531,10 +531,11 @@ function renderCurrentBar(turn) {
   const bar = document.createElement("div");
   bar.className = "bar";
   bar.style.width = `${clampPct((turn.total / axis) * 100)}%`;
+  const segTotal = Math.max(1, turn.total); // avoid NaN widths if every slice is 0
   for (const s of segs) {
     const seg = document.createElement("div");
     seg.className = `seg ${s.cls}`;
-    seg.style.width = `${(s.ms / turn.total) * 100}%`;
+    seg.style.width = `${(s.ms / segTotal) * 100}%`;
     seg.title = `${s.ms} ms`;
     bar.appendChild(seg);
   }
