@@ -15,14 +15,18 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import "dotenv/config";
-import { DG_AGENT_URL, PUBLIC_DIR, buildSettings, loadConfig } from "./agent";
+import { DG_AGENT_URL, PUBLIC_DIR, buildSettings, loadConfig, resolveThinkApiKey } from "./agent";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
+
+// Resolve the think provider's key from config (Together by default; ANTHROPIC_API_KEY etc.
+// when swapped). Keep both keys server-side — they never reach the browser or /config.
+const THINK_API_KEY = resolveThinkApiKey(loadConfig());
 
 if (!DEEPGRAM_API_KEY) fail("DEEPGRAM_API_KEY is missing. Copy .env.example to .env and fill it in.");
-if (!TOGETHER_API_KEY) fail("TOGETHER_API_KEY is missing. Copy .env.example to .env and fill it in.");
+if (!THINK_API_KEY.value)
+  fail(`${THINK_API_KEY.envName} is missing (think provider key). Copy .env.example to .env and fill it in.`);
 
 function fail(msg: string): never {
   console.error(`\n[fatal] ${msg}\n`);
@@ -85,7 +89,15 @@ wss.on("connection", (client) => {
   console.log(`${tag} connected`);
 
   const cfg = loadConfig();
-  const settings = buildSettings(cfg, TOGETHER_API_KEY!);
+  // Re-resolve per connection so a config-driven provider swap (edit, press R) picks up
+  // the matching key without a restart.
+  const thinkKey = resolveThinkApiKey(cfg);
+  if (!thinkKey.value) {
+    console.error(`${tag} ${thinkKey.envName} is missing (think provider key); closing.`);
+    client.close();
+    return;
+  }
+  const settings = buildSettings(cfg, thinkKey.value);
 
   const upstream = new WebSocket(DG_AGENT_URL, {
     headers: { Authorization: `Token ${DEEPGRAM_API_KEY}` },

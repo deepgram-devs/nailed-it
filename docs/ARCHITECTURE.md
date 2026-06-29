@@ -103,19 +103,20 @@ The client multiplies by 1000 to display milliseconds.
 
 ## Config knobs (`config/agent.config.json`)
 
-| Path                                 | Effect                                                                                    |
-| ------------------------------------ | ----------------------------------------------------------------------------------------- |
-| `listen.model` / `listen.version`    | STT model. `flux-general-en` / `v2` here; `nova-3` is the fallback.                       |
-| `listen.eotThreshold`                | End-of-turn confidence (0.5–0.9). Lower = fires sooner, riskier on false stops.           |
-| `listen.eagerEotThreshold`           | Speculative early end-of-turn.                                                            |
-| `listen.eotTimeoutMs`                | Hard cap on turn length; also the dead-air safety net.                                    |
-| `think.model`                        | Together model id (e.g. `openai/gpt-oss-20b`, `meta-llama/Llama-3.3-70B-Instruct-Turbo`). |
-| `think.endpointUrl`                  | OpenAI-compatible completions endpoint.                                                   |
-| `think.temperature` / `think.prompt` | LLM sampling and the game's system prompt.                                                |
-| `speak.model`                        | Aura-2 voice.                                                                             |
-| `hud.feelsInstantThresholdMs`        | The "feels instant" line (default 800). Green under, red over.                            |
-| `hud.axisMaxMs`                      | Full-width of the HUD bar/timeline in ms (scaling).                                       |
-| `hud.rollingHistory`                 | How many turn columns the timeline keeps.                                                 |
+| Path                                 | Effect                                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `listen.model` / `listen.version`    | STT model. `flux-general-en` / `v2` here; `nova-3` is the fallback.                                                                         |
+| `listen.eotThreshold`                | End-of-turn confidence (0.5–0.9). Lower = fires sooner, riskier on false stops.                                                             |
+| `listen.eagerEotThreshold`           | Speculative early end-of-turn.                                                                                                              |
+| `listen.eotTimeoutMs`                | Hard cap on turn length; also the dead-air safety net.                                                                                      |
+| `think.model`                        | Together model id (e.g. `openai/gpt-oss-20b`, `meta-llama/Llama-3.3-70B-Instruct-Turbo`).                                                   |
+| `think.endpointUrl`                  | OpenAI-compatible completions endpoint.                                                                                                     |
+| `think.apiKeyEnv`                    | Env var holding the provider's Bearer key (default `TOGETHER_API_KEY`). Set to `ANTHROPIC_API_KEY` etc. to swap providers — no code change. |
+| `think.temperature` / `think.prompt` | LLM sampling and the game's system prompt.                                                                                                  |
+| `speak.model`                        | Aura-2 voice.                                                                                                                               |
+| `hud.feelsInstantThresholdMs`        | The "feels instant" line (default 800). Green under, red over.                                                                              |
+| `hud.axisMaxMs`                      | Full-width of the HUD bar/timeline in ms (scaling).                                                                                         |
+| `hud.rollingHistory`                 | How many turn columns the timeline keeps.                                                                                                   |
 
 The proxy re-reads this file on every WebSocket connection, so a reconnect (press **R** in the
 browser) picks up edits with no restart.
