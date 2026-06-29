@@ -273,6 +273,8 @@ function ensurePlayback() {
 }
 function enqueuePcm(arrayBuffer) {
   ensurePlayback();
+  // Int16Array needs an even byteLength; skip a truncated/odd frame rather than throw.
+  if (arrayBuffer.byteLength % 2) return;
   const pcm = new Int16Array(arrayBuffer);
   if (pcm.length === 0) return;
   const f32 = new Float32Array(pcm.length);
