@@ -12,7 +12,7 @@
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, sep } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import "dotenv/config";
 import {
@@ -76,7 +76,9 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
   const rel = urlPath === "/" ? "/index.html" : urlPath;
   // Prevent path traversal.
   const filePath = normalize(join(PUBLIC_DIR, rel));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  // Anchor to PUBLIC_DIR + separator so a sibling dir sharing the prefix
+  // (e.g. `public.bak`) can't be reached via `..`.
+  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + sep)) {
     res.writeHead(403).end("forbidden");
     return;
   }
