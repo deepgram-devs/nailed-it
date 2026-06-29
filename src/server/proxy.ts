@@ -1,5 +1,5 @@
 /**
- * Finish My Sentence — thin localhost proxy.
+ * Nailed It — thin localhost proxy.
  *
  * Browser  <->  this proxy  <->  Deepgram Voice Agent WS  ->  Together AI
  *
@@ -211,7 +211,7 @@ function logEvent(tag: string, evt: any) {
 
 httpServer.listen(PORT, () => {
   const cfg = loadConfig();
-  console.log(`\n  Finish My Sentence`);
+  console.log(`\n  Nailed It`);
   console.log(`  open  http://localhost:${PORT}`);
   console.log(`  think ${cfg.think.model}  via  ${cfg.think.endpointUrl}`);
   console.log(`  listen ${cfg.listen.model}  speak ${cfg.speak.model}\n`);

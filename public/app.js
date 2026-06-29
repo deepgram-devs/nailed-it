@@ -1,4 +1,4 @@
-// Finish My Sentence — browser client.
+// Nailed It — browser client.
 // Mic -> proxy (linear16 16k). Agent audio (linear16 24k) -> playback.
 // Reads AgentStartedSpeaking latency fields to draw the HUD + timeline.
 
@@ -9,6 +9,8 @@ const STORE_KEY = "fms:v1";
 const openerList = () => cfg.openers?.lines ?? [];
 const openerVisible = () => cfg.openers?.visible ?? 3;
 const openerRotateMs = () => cfg.openers?.rotateMs ?? 6000;
+// Jingles carry the hidden accept-keywords used to score the agent's completion (HIT/MISS).
+const jingleList = () => cfg.openers?.jingles ?? [];
 
 const els = {
   status: document.getElementById("status"),
@@ -19,6 +21,7 @@ const els = {
   openerCountdown: document.getElementById("openerCountdown"),
   openerCount: document.getElementById("openerCount"),
   openerProgress: document.getElementById("openerProgress"),
+  verdict: document.getElementById("verdict"),
   bars: document.getElementById("bars"),
   provenance: document.getElementById("provenance"),
   stats: document.getElementById("stats"),
@@ -41,7 +44,7 @@ let cfg = {
     think: { model: "", provider: "" },
     speak: { model: "" },
   },
-  openers: { lines: [], visible: 3, rotateMs: 6000 },
+  openers: { lines: [], jingles: [], visible: 3, rotateMs: 6000 },
 };
 
 let ws = null;
@@ -55,6 +58,8 @@ let micMuted = false;
 let started = false;
 let agentSpeaking = false; // true between AgentStartedSpeaking and AgentAudioDone — drives barge-in detection
 let requestId = null; // from Welcome — shown as latency provenance
+let lastUserFragment = ""; // most recent user transcript — matched against jingles to score the completion
+let verdictTimer = null;
 
 let turns = []; // session + restored: { total, listen, ttt, tts, under, ts }
 let store = { bestEverMs: null, lifetimeTurns: 0, recent: [] };
@@ -373,17 +378,23 @@ function handleEvent(msg) {
       const interrupting = agentSpeaking || liveSources.size > 0;
       flushPlayback();
       agentSpeaking = false;
+      hideVerdict(); // new turn starting — clear the previous stamp
       setStatus(interrupting ? "interrupted" : "listening", interrupting ? "barge-in — interrupted" : "listening");
       break;
     }
     case "ConversationText":
       if (msg.role === "user") {
         // Flux fired end-of-turn and handed us the transcript — the "how it knows you stopped" moment.
+        lastUserFragment = msg.content || "";
         els.userText.textContent = msg.content || "—";
         els.agentText.textContent = "…";
+        hideVerdict();
         setStatus("thinking", "turn detected — thinking…");
       } else if (msg.role === "assistant") {
         els.agentText.textContent = msg.content || "—";
+        // Score the jingle: did the completion land the matched opener's keyword?
+        const jingle = matchJingle(lastUserFragment);
+        if (jingle) showVerdict(scoreCompletion(jingle, msg.content || ""));
       }
       break;
     case "AgentStartedSpeaking":
@@ -419,6 +430,65 @@ function renderProvenance() {
   const text = document.createElement("span");
   text.textContent = `live · latency from AgentStartedSpeaking · req ${requestId.slice(0, 8)}`;
   els.provenance.replaceChildren(dot, text);
+}
+
+// ── Jingle verdict (NAILED IT / MISSED IT) ──────────────────────────────────────
+// Fully automatic: we never get a hidden signal from the model (Deepgram speaks every token it
+// emits), so we score client-side. Match the user's spoken fragment to a jingle from /config,
+// then check whether the agent's completion contains that jingle's accept-keyword.
+const normalize = (s) =>
+  (s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9'\s-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+// Best jingle whose opener stem (text minus the trailing ellipsis) overlaps the spoken fragment.
+// Token-overlap tolerates a misheard/dropped word; returns null below a confidence floor so
+// audience freestyle (no matching jingle) simply goes unscored.
+function matchJingle(userText) {
+  const userTokens = new Set(normalize(userText).split(" ").filter(Boolean));
+  if (!userTokens.size) return null;
+  let best = null;
+  let bestRatio = 0;
+  for (const j of jingleList()) {
+    if (!j.accept?.length) continue; // unscorable opener
+    const stemTokens = normalize(j.text.replace(/…+$/, "")).split(" ").filter(Boolean);
+    if (!stemTokens.length) continue;
+    const hits = stemTokens.filter((t) => userTokens.has(t)).length;
+    const ratio = hits / stemTokens.length;
+    if (ratio > bestRatio) {
+      bestRatio = ratio;
+      best = j;
+    }
+  }
+  return bestRatio >= 0.6 ? best : null;
+}
+
+function scoreCompletion(jingle, completion) {
+  const text = normalize(completion);
+  return jingle.accept.some((kw) => text.includes(normalize(kw)));
+}
+
+function showVerdict(hit) {
+  const el = els.verdict;
+  if (!el) return;
+  if (verdictTimer) clearTimeout(verdictTimer);
+  el.classList.remove("show", "hit", "miss");
+  void el.offsetWidth; // reflow so the stamp animation replays
+  el.textContent = hit ? "NAILED IT" : "MISSED IT";
+  el.classList.add("show", hit ? "hit" : "miss");
+  el.setAttribute("aria-hidden", "false");
+  verdictTimer = setTimeout(() => hideVerdict(), 4500);
+}
+
+function hideVerdict() {
+  const el = els.verdict;
+  if (!el) return;
+  if (verdictTimer) clearTimeout(verdictTimer);
+  el.classList.remove("show", "hit", "miss");
+  el.textContent = "";
+  el.setAttribute("aria-hidden", "true");
 }
 
 // ── Metrics + HUD ─────────────────────────────────────────────────────────────
@@ -591,6 +661,8 @@ async function start() {
 
 async function reset() {
   flushPlayback();
+  hideVerdict();
+  lastUserFragment = "";
   micMuted = false;
   els.muteBtn.textContent = "Mute (Space)";
   if (ws) {

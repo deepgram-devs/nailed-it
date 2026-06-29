@@ -6,10 +6,12 @@ repo. Humans: see [README.md](README.md). Ground-truth API/protocol details:
 
 ## What this is
 
-A lightning-talk voice demo, "Finish My Sentence." You speak the start of a sentence and stop;
-a voice agent completes it in one funny line, with an on-screen latency HUD. **Deepgram** does
+A lightning-talk voice demo, "Nailed It." You speak the start of a famous jingle and stop;
+a voice agent completes it in one funny line, and the HUD stamps **NAILED IT / MISSED IT** on
+whether the spoken completion landed the real ending (scored client-side against the accept
+keywords in [FRAGMENTS.md](FRAGMENTS.md)) — alongside an on-screen latency HUD. **Deepgram** does
 speech-to-text (Flux), turn detection, and text-to-speech (Aura-2). **Together AI** runs the
-LLM that finishes the sentence. A thin Node proxy holds both API keys and relays the audio
+LLM that finishes the jingle. A thin Node proxy holds both API keys and relays the audio
 WebSocket between the browser and Deepgram's Voice Agent API.
 
 ## Commands

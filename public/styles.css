@@ -164,11 +164,51 @@ main {
 }
 
 .stage {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 18px;
   min-height: 0;
+}
+
+/* Jingle verdict — a rubber-stamp that slams in over the stage when a completion lands. */
+.verdict {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  z-index: 5;
+  padding: 6px 16px;
+  border: 3px solid currentColor;
+  border-radius: 10px;
+  font-size: clamp(20px, 2.4vw, 32px);
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0;
+  pointer-events: none;
+}
+.verdict.show {
+  animation: verdictStamp 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+.verdict.hit {
+  color: var(--good);
+}
+.verdict.miss {
+  color: var(--bad);
+}
+@keyframes verdictStamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-9deg) scale(2.4);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-9deg) scale(1);
+  }
 }
 .line .label {
   color: var(--muted);

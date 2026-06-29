@@ -50,27 +50,54 @@ export function loadConfig(): AgentConfig {
 }
 
 /**
- * The opener fragments shown on screen, parsed from FRAGMENTS.md so the doc and the page never
- * drift. Picks the bullet lines that trail off with an ellipsis. Returns [] if the file is gone
- * (the page just hides the chip row). Re-read per request so edits show on reload.
+ * A jingle opener: the `text` is the chip shown on screen and spoken aloud; `accept` are the
+ * hidden keywords that mark a HIT if the agent's completion contains any of them. Freestyle
+ * openers (no `|` in FRAGMENTS.md) carry an empty `accept` and simply can't be scored.
  */
-export function loadOpeners(): string[] {
+export type Jingle = { text: string; accept: string[] };
+
+/** Parse one `- <opener>… | kw1, kw2` bullet. Returns null if it isn't an opener (no ellipsis). */
+function parseJingleLine(line: string): Jingle | null {
+  const [textPart, acceptPart] = line.split("|");
+  const text = textPart.trim();
+  if (!text.endsWith("…")) return null;
+  const accept = (acceptPart ?? "")
+    .split(",")
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+  return { text, accept };
+}
+
+/**
+ * The opener jingles, parsed from FRAGMENTS.md so the doc and the page never drift. Picks the
+ * bullet lines that trail off with an ellipsis; the part after `|` is the hidden accept-keyword
+ * set used to score HIT/MISS. Returns [] if the file is gone (the page just hides the chip row).
+ * Re-read per request so edits show on reload.
+ */
+export function loadOpeners(): Jingle[] {
   try {
     return readFileSync(FRAGMENTS_PATH, "utf8")
       .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.startsWith("- "))
       .map((line) => line.slice(2).trim())
-      .filter((line) => line.endsWith("…"));
+      .map(parseJingleLine)
+      .filter((j): j is Jingle => j !== null);
   } catch {
     return [];
   }
 }
 
-/** Opener chips for the HUD: the lines (from FRAGMENTS.md) plus the configurable rotation knobs. */
+/**
+ * Opener chips for the HUD: the visible `lines` plus the `jingles` (text + accept keywords) the
+ * client uses to stamp NAILED IT / MISSED IT, plus the configurable rotation knobs. The accept
+ * keywords are not secret — they're the game's answer key, shared with the browser on purpose.
+ */
 export function openersPayload(cfg: AgentConfig) {
+  const jingles = loadOpeners();
   return {
-    lines: loadOpeners(),
+    lines: jingles.map((j) => j.text),
+    jingles,
     visible: cfg.openers?.visible ?? OPENERS_DEFAULTS.visible,
     rotateMs: cfg.openers?.rotateMs ?? OPENERS_DEFAULTS.rotateMs,
   };

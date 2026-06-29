@@ -1,14 +1,15 @@
-# Finish My Sentence 🎤→🤖
+# Nailed It 🎤→🤖
 
-> Speak the **start** of a sentence, stop, and a voice agent snaps the ending in one funny
-> line — with a live HUD showing the time-to-first-word latency budget being hit in real time.
+> Speak the **start** of a famous jingle, stop, and a voice agent nails the ending in one funny
+> line — with a live HUD showing the time-to-first-word latency, and a **NAILED IT / MISSED IT**
+> verdict stamped on whether it landed the real line.
 
-[![CI](https://github.com/deepgram-devs/finish-my-sentence/actions/workflows/ci.yml/badge.svg)](https://github.com/deepgram-devs/finish-my-sentence/actions/workflows/ci.yml)
+[![CI](https://github.com/deepgram-devs/nailed-it/actions/workflows/ci.yml/badge.svg)](https://github.com/deepgram-devs/nailed-it/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-1D9E75.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-%E2%89%A520-7F77DD.svg)](.nvmrc)
 
 A compact, real-time voice-agent sample. **Deepgram** owns speech-in (Flux), turn detection,
-and speech-out (Aura-2). **Together AI** runs the LLM that finishes the sentence. A thin Node
+and speech-out (Aura-2). **Together AI** runs the LLM that finishes the jingle. A thin Node
 proxy keeps both API keys server-side.
 
 ```
@@ -116,8 +117,8 @@ latency is read live from `AgentStartedSpeaking`, not canned.
 
 **The loop (≈10 seconds each):**
 
-1. Speak the **start** of a sentence, then stop — e.g. _"The best part of waking up is…"_. Let it finish out loud.
-2. Point at the bar: **turn-taking** (derived) · **LLM** · **Aura TTS**, with the total against the 800 ms "feels instant" line.
+1. Speak the **start** of a jingle, then stop — e.g. _"The best part of waking up is…"_. Let it finish out loud; the HUD stamps **NAILED IT** or **MISSED IT**.
+2. Point at the bar: **turn-taking** (derived) · **LLM** · **Aura TTS**, with the total against the "feels instant" line.
 3. Start talking again mid-reply to show **barge-in** (it cuts off and listens).
 4. _Optional flex:_ edit `think.model` in [`config/agent.config.json`](config/agent.config.json), press **R** — the pipeline strip and latency shift live, no restart.
 
