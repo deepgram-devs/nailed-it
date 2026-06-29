@@ -3,7 +3,7 @@
 > Speak the **start** of a sentence, stop, and a voice agent snaps the ending in one funny
 > line — with a live HUD showing the time-to-first-word latency budget being hit in real time.
 
-[![CI](https://github.com/OWNER/finish-my-sentence/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/dg-coreylweathers/finish-my-sentence/actions/workflows/ci.yml/badge.svg)](https://github.com/dg-coreylweathers/finish-my-sentence/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-1D9E75.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/Node-%E2%89%A520-7F77DD.svg)](.nvmrc)
 
@@ -28,7 +28,7 @@ the LLM path. It exists to keep keys off the browser and relay the audio socket.
 
 ## Prerequisites
 
-- **Node ≥ 20** (`nvm use` reads [`.nvmrc`](.nvmrc)).
+- **Node ≥ 20** — the repo pins **Node 24 LTS** via [`.nvmrc`](.nvmrc) (`nvm use`); CI runs 24.
 - **Deepgram API key** — https://console.deepgram.com
 - **Together AI API key** — https://api.together.ai
 - A browser with mic access (Chrome/Edge/Safari). `localhost` counts as a secure context, so the mic works without HTTPS.
@@ -56,7 +56,7 @@ Aura loop runs, and prints the completion + latency. Exit 0 means everything is 
   · SettingsApplied — agent accepted the config
   · injecting a test fragment…
   ↳ completion: "a snooze button and three regrets."
-  ↳ latency: total 742ms  (Flux 121ms · Together 360ms · Aura 261ms)
+  ↳ latency: total 742ms  (Flux 121ms · LLM 360ms · Aura 261ms)
   ✓ Everything is wired. You're ready to rehearse.
 ```
 
@@ -77,7 +77,7 @@ Everything tunable is in [`config/agent.config.json`](config/agent.config.json).
 re-reads it on every connection, so edit, then press **R** in the browser to reconnect.
 
 - **The game:** `think.prompt`.
-- **Model:** `think.model` — `openai/gpt-oss-20b` (fastest) or `meta-llama/Llama-3.3-70B-Instruct-Turbo` (wittier).
+- **Model:** `think.model` — `openai/gpt-oss-20b` (fastest) or `meta-llama/Llama-3.3-70B-Instruct-Turbo` (wittier). To run on a different provider (e.g. **Claude** via Anthropic's OpenAI-compatible endpoint), set `think.endpointUrl`, `think.model`, and `think.apiKeyEnv` — see [AGENTS.md](AGENTS.md#how-to-extend-common-asks). For voice, pick a fast model (Claude **Haiku 4.5**); the demo's latency budget rules out heavyweight/thinking models.
 - **Turn-taking (the make-or-break knob):** `listen.eotThreshold` (0.5–0.9; lower fires sooner), `listen.eagerEotThreshold`, `listen.eotTimeoutMs` (hard cap + dead-air safety net). Tune by ear in rehearsal.
 - **HUD:** `hud.feelsInstantThresholdMs` (default 800), `hud.axisMaxMs` (bar/timeline scale), `hud.rollingHistory`.
 

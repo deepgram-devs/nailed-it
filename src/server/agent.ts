@@ -18,11 +18,23 @@ export const DG_AGENT_URL = "wss://agent.deepgram.com/v1/agent/converse";
 export type AgentConfig = {
   audio: { inputSampleRate: number; outputSampleRate: number };
   listen: { model: string; version: string; eotThreshold: number; eagerEotThreshold: number; eotTimeoutMs: number };
-  think: { providerType: string; model: string; endpointUrl: string; temperature: number; prompt: string };
+  think: {
+    providerType: string;
+    model: string;
+    endpointUrl: string;
+    temperature: number;
+    prompt: string;
+    // Which env var holds the Bearer key for `endpointUrl`. Defaults to TOGETHER_API_KEY.
+    // Point it at ANTHROPIC_API_KEY (etc.) to swap in another OpenAI-compatible provider.
+    apiKeyEnv?: string;
+  };
   speak: { model: string };
   greeting: string;
   hud: { feelsInstantThresholdMs: number; axisMaxMs: number; rollingHistory: number };
 };
+
+/** Default env var for the think provider's key. Together is the demo's default LLM. */
+export const DEFAULT_THINK_API_KEY_ENV = "TOGETHER_API_KEY";
 
 /** Re-read on every connection so rehearsal tweaks land on the next reconnect, no restart. */
 export function loadConfig(): AgentConfig {
@@ -30,10 +42,22 @@ export function loadConfig(): AgentConfig {
 }
 
 /**
- * Build the Deepgram `Settings` message from config. The Together key is injected
- * here, server-side only — it must never reach the browser or `/config`.
+ * Resolve the Bearer key for the think provider, server-side. Reads the env var named by
+ * `think.apiKeyEnv` (default TOGETHER_API_KEY) so swapping providers is config + key only,
+ * never a code change. The returned key is injected into the Settings here and never reaches
+ * the browser or `/config`.
  */
-export function buildSettings(cfg: AgentConfig, togetherApiKey: string) {
+export function resolveThinkApiKey(cfg: AgentConfig): { envName: string; value: string | undefined } {
+  const envName = cfg.think.apiKeyEnv ?? DEFAULT_THINK_API_KEY_ENV;
+  return { envName, value: process.env[envName] };
+}
+
+/**
+ * Build the Deepgram `Settings` message from config. The think provider's key (Together
+ * by default; see `resolveThinkApiKey`) is injected here, server-side only — it must never
+ * reach the browser or `/config`.
+ */
+export function buildSettings(cfg: AgentConfig, thinkApiKey: string) {
   return {
     type: "Settings",
     // experimental:true is REQUIRED for the AgentStartedSpeaking latency event the HUD reads.
@@ -60,7 +84,7 @@ export function buildSettings(cfg: AgentConfig, togetherApiKey: string) {
         // Sibling of `provider`. Deepgram calls this endpoint directly over public HTTPS.
         endpoint: {
           url: cfg.think.endpointUrl,
-          headers: { Authorization: `Bearer ${togetherApiKey}` },
+          headers: { Authorization: `Bearer ${thinkApiKey}` },
         },
         prompt: cfg.think.prompt,
       },

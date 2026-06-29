@@ -10,10 +10,9 @@
  */
 import "dotenv/config";
 import { WebSocket } from "ws";
-import { DG_AGENT_URL, buildSettings, loadConfig } from "./agent";
+import { DG_AGENT_URL, buildSettings, loadConfig, resolveThinkApiKey } from "./agent";
 
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
 const TEST_FRAGMENT = process.env.CHECK_FRAGMENT ?? "The best part of waking up is";
 const OVERALL_TIMEOUT_MS = 20000;
 
@@ -22,11 +21,14 @@ function die(msg: string): never {
   process.exit(1);
 }
 
-if (!DEEPGRAM_API_KEY) die("DEEPGRAM_API_KEY is missing. Copy .env.example to .env and fill it in.");
-if (!TOGETHER_API_KEY) die("TOGETHER_API_KEY is missing. Copy .env.example to .env and fill it in.");
-
 const cfg = loadConfig();
-const settings = buildSettings(cfg, TOGETHER_API_KEY);
+const thinkKey = resolveThinkApiKey(cfg);
+
+if (!DEEPGRAM_API_KEY) die("DEEPGRAM_API_KEY is missing. Copy .env.example to .env and fill it in.");
+if (!thinkKey.value)
+  die(`${thinkKey.envName} is missing (think provider key). Copy .env.example to .env and fill it in.`);
+
+const settings = buildSettings(cfg, thinkKey.value);
 
 console.log(`\n  Finish My Sentence — connection check`);
 console.log(`  listen ${cfg.listen.model}   think ${cfg.think.model}   speak ${cfg.speak.model}`);
@@ -46,7 +48,7 @@ const finish = (latency?: { total: number; ttt: number; tts: number }) => {
   if (latency) {
     const flux = Math.max(0, latency.total - latency.ttt - latency.tts);
     console.log(
-      `  ↳ latency: total ${latency.total}ms  (Flux ${flux}ms · Together ${latency.ttt}ms · Aura ${latency.tts}ms)`,
+      `  ↳ latency: total ${latency.total}ms  (Flux ${flux}ms · LLM ${latency.ttt}ms · Aura ${latency.tts}ms)`,
     );
   }
   console.log(`\n  ✓ Everything is wired. You're ready to rehearse.\n`);
