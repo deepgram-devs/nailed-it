@@ -4,10 +4,20 @@
 
 const STORE_KEY = "fms:v1";
 
+// How many opener chips show at once, and how long before the set rotates (whole seconds,
+// so the countdown reads cleanly).
+const OPENERS_VISIBLE = 3;
+const OPENERS_ROTATE_MS = 6000;
+
 const els = {
   status: document.getElementById("status"),
   userText: document.getElementById("userText"),
   agentText: document.getElementById("agentText"),
+  pipeline: document.getElementById("pipeline"),
+  openerChips: document.getElementById("openerChips"),
+  openerCountdown: document.getElementById("openerCountdown"),
+  openerCount: document.getElementById("openerCount"),
+  openerProgress: document.getElementById("openerProgress"),
   bars: document.getElementById("bars"),
   stats: document.getElementById("stats"),
   columns: document.getElementById("columns"),
@@ -24,6 +34,12 @@ let cfg = {
   hud: { feelsInstantThresholdMs: 800, axisMaxMs: 1600, rollingHistory: 40 },
   outputSampleRate: 24000,
   inputSampleRate: 16000,
+  agent: {
+    listen: { model: "flux-general-en", version: "v2" },
+    think: { model: "", provider: "" },
+    speak: { model: "" },
+  },
+  openers: [],
 };
 
 let ws = null;
@@ -87,6 +103,121 @@ async function loadConfig() {
   const tPct = clampPct((cfg.hud.feelsInstantThresholdMs / cfg.hud.axisMaxMs) * 100);
   els.thresholdLine.style.bottom = `${tPct}%`;
   els.thresholdLine.querySelector(".tl-label").textContent = `${cfg.hud.feelsInstantThresholdMs} ms`;
+  renderPipeline();
+  startOpenerRotation();
+}
+
+// Draw the live model chain from /config. Stage colors mirror the HUD bar segments, so the
+// audience can map each leg of the pipeline to its latency slice. Updates on reconnect (R),
+// so a config-driven model swap is visible immediately.
+function renderPipeline() {
+  const a = cfg.agent;
+  if (!a) return;
+  const shortModel = (m) => (m && m.includes("/") ? m.split("/").pop() : m) || "—";
+  const stages = [
+    {
+      cls: "flux",
+      model: `${a.listen.model}${a.listen.version ? ` ${a.listen.version}` : ""}`,
+      co: "Deepgram",
+      full: a.listen.model,
+    },
+    { cls: "purple", model: shortModel(a.think.model), co: a.think.provider || "LLM", full: a.think.model },
+    { cls: "teal", model: a.speak.model || "—", co: "Deepgram", full: a.speak.model },
+  ];
+  const nodes = [];
+  stages.forEach((s, i) => {
+    if (i > 0) {
+      const arrow = document.createElement("span");
+      arrow.className = "pipe-arrow";
+      arrow.textContent = "→";
+      nodes.push(arrow);
+    }
+    const stage = document.createElement("span");
+    stage.className = "pipe-stage";
+    stage.title = s.full || s.model;
+    const dot = document.createElement("span");
+    dot.className = `dot ${s.cls}`;
+    const model = document.createElement("span");
+    model.className = "pipe-model";
+    model.textContent = s.model;
+    const co = document.createElement("span");
+    co.className = "pipe-co";
+    co.textContent = s.co;
+    stage.append(dot, model, co);
+    nodes.push(stage);
+  });
+  els.pipeline.replaceChildren(...nodes);
+}
+
+// Opener chips, sourced from /config (FRAGMENTS.md). Purely visual prompts, not interactive.
+// A window of OPENERS_VISIBLE rotates through the full list so guests always see fresh lines.
+let openerIdx = 0;
+let openerTimer = null;
+
+function renderOpeners() {
+  const list = cfg.openers ?? [];
+  const wrap = els.openerChips.closest(".openers");
+  if (!list.length) {
+    if (wrap) wrap.style.display = "none";
+    return;
+  }
+  if (wrap) wrap.style.display = "";
+  const shown = [];
+  for (let i = 0; i < Math.min(OPENERS_VISIBLE, list.length); i++) {
+    shown.push(list[(openerIdx + i) % list.length]);
+  }
+  els.openerChips.replaceChildren(
+    ...shown.map((text) => {
+      const chip = document.createElement("span");
+      chip.className = "opener-chip";
+      chip.textContent = text;
+      return chip;
+    }),
+  );
+}
+
+// Restart the filling progress bar — a smooth CSS transition from empty to full over `ms`.
+function restartOpenerProgress(ms) {
+  const bar = els.openerProgress;
+  if (!bar) return;
+  bar.style.transition = "none";
+  bar.style.transform = "scaleX(0)";
+  void bar.offsetWidth; // force reflow so the reset takes before we animate
+  bar.style.transition = `transform ${ms}ms linear`;
+  bar.style.transform = "scaleX(1)";
+}
+
+function startOpenerRotation() {
+  if (openerTimer) clearInterval(openerTimer);
+  openerIdx = 0;
+  renderOpeners();
+
+  const list = cfg.openers ?? [];
+  // Nothing to rotate through — hide the countdown and stop.
+  if (list.length <= OPENERS_VISIBLE) {
+    els.openerCountdown.style.display = "none";
+    return;
+  }
+  els.openerCountdown.style.display = "";
+
+  const stepSec = Math.round(OPENERS_ROTATE_MS / 1000);
+  let remaining = stepSec;
+  const beginCycle = () => {
+    remaining = stepSec;
+    els.openerCount.textContent = `next in ${remaining}s`;
+    restartOpenerProgress(OPENERS_ROTATE_MS);
+  };
+  beginCycle();
+  openerTimer = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      openerIdx = (openerIdx + OPENERS_VISIBLE) % list.length;
+      renderOpeners();
+      beginCycle();
+    } else {
+      els.openerCount.textContent = `next in ${remaining}s`;
+    }
+  }, 1000);
 }
 
 const clampPct = (n) => Math.max(0, Math.min(100, n));
@@ -246,7 +377,7 @@ function recordTurn(evt) {
 function renderCurrentBar(turn) {
   const axis = cfg.hud.axisMaxMs;
   const segs = [
-    { ms: turn.listen, cls: "teal" },
+    { ms: turn.listen, cls: "flux" },
     { ms: turn.ttt, cls: "purple" },
     { ms: turn.tts, cls: "teal" },
   ];
@@ -280,14 +411,41 @@ function renderCurrentBar(turn) {
 
   row.appendChild(track);
   row.appendChild(total);
-  els.bars.replaceChildren(row);
+
+  // Spell out the three slices. Together LLM and Aura TTS are measured fields from
+  // AgentStartedSpeaking; turn-taking is derived (total − LLM − TTS) and tagged as such.
+  const breakdown = document.createElement("div");
+  breakdown.className = "bar-breakdown";
+  const parts = [
+    { cls: "flux", ms: turn.listen, label: "turn-taking", tag: "derived" },
+    { cls: "purple", ms: turn.ttt, label: "LLM" },
+    { cls: "teal", ms: turn.tts, label: "Aura TTS" },
+  ];
+  for (const p of parts) {
+    const brk = document.createElement("div");
+    brk.className = "brk";
+    const dot = document.createElement("span");
+    dot.className = `dot ${p.cls}`;
+    const text = document.createElement("span");
+    text.append(`${p.label} `, Object.assign(document.createElement("b"), { textContent: `${p.ms} ms` }));
+    brk.append(dot, text);
+    if (p.tag) {
+      const tag = document.createElement("span");
+      tag.className = "brk-tag";
+      tag.textContent = `(${p.tag})`;
+      brk.append(tag);
+    }
+    breakdown.appendChild(brk);
+  }
+
+  els.bars.replaceChildren(row, breakdown);
 }
 
 function appendColumn(turn) {
   const axis = cfg.hud.axisMaxMs;
   const col = document.createElement("div");
   col.className = `col ${turn.under ? "good" : "bad"}`;
-  col.title = `${turn.total} ms (Flux ${turn.listen} · Together ${turn.ttt} · Aura ${turn.tts})`;
+  col.title = `${turn.total} ms — turn-taking ${turn.listen} ms (derived) · LLM ${turn.ttt} ms · Aura ${turn.tts} ms`;
 
   const stack = document.createElement("div");
   stack.className = "col-stack";
@@ -295,7 +453,7 @@ function appendColumn(turn) {
   for (const s of [
     { ms: turn.tts, cls: "teal" },
     { ms: turn.ttt, cls: "purple" },
-    { ms: turn.listen, cls: "teal" },
+    { ms: turn.listen, cls: "flux" },
   ]) {
     const seg = document.createElement("div");
     seg.className = `cseg ${s.cls}`;
@@ -362,7 +520,7 @@ async function start() {
   connect();
 }
 
-function reset() {
+async function reset() {
   flushPlayback();
   micMuted = false;
   els.muteBtn.textContent = "Mute (Space)";
@@ -371,6 +529,8 @@ function reset() {
       ws.close();
     } catch {}
   }
+  // Re-read /config so a between-rehearsal model/threshold swap is reflected (strip, axis, line).
+  await loadConfig();
   connect();
   setStatus("connecting", "reconnecting");
 }
