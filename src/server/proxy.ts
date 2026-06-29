@@ -94,6 +94,8 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
 const httpServer = createServer((req, res) => void serveStatic(req, res));
 
 // ── WebSocket relay ─────────────────────────────────────────────────────────
+// Attached to the HTTP server, so it upgrades any path — the client's `/agent`
+// path is cosmetic. There's one WS endpoint; add path routing here if you add more.
 const wss = new WebSocketServer({ server: httpServer });
 let clientSeq = 0;
 
