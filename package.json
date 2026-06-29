@@ -5,6 +5,12 @@
   "type": "module",
   "description": "Deepgram x Together AI live voice demo: speak the start of a sentence, the agent snaps the ending, with a live latency HUD.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dg-coreylweathers/finish-my-sentence.git"
+  },
+  "homepage": "https://github.com/dg-coreylweathers/finish-my-sentence#readme",
+  "bugs": "https://github.com/dg-coreylweathers/finish-my-sentence/issues",
   "engines": {
     "node": ">=20"
   },
