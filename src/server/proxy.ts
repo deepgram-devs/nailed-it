@@ -12,7 +12,7 @@
  */
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { extname, join, normalize, sep } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import "dotenv/config";
 import {
@@ -76,7 +76,9 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
   const rel = urlPath === "/" ? "/index.html" : urlPath;
   // Prevent path traversal.
   const filePath = normalize(join(PUBLIC_DIR, rel));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  // Anchor to PUBLIC_DIR + separator so a sibling dir sharing the prefix
+  // (e.g. `public.bak`) can't be reached via `..`.
+  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + sep)) {
     res.writeHead(403).end("forbidden");
     return;
   }
@@ -92,6 +94,8 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
 const httpServer = createServer((req, res) => void serveStatic(req, res));
 
 // ── WebSocket relay ─────────────────────────────────────────────────────────
+// Attached to the HTTP server, so it upgrades any path — the client's `/agent`
+// path is cosmetic. There's one WS endpoint; add path routing here if you add more.
 const wss = new WebSocketServer({ server: httpServer });
 let clientSeq = 0;
 
@@ -117,7 +121,11 @@ wss.on("connection", (client) => {
   upstream.binaryType = "nodebuffer";
 
   let upstreamReady = false;
+  // Mic chunks captured before SettingsApplied, flushed once the agent is ready.
+  // Bounded so a connection that never readies can't grow this without limit
+  // (~80 ms/chunk → ~8 s of audio); we drop the oldest past the cap.
   const preReadyAudio: Buffer[] = [];
+  const PRE_READY_MAX_CHUNKS = 100;
   let keepAlive: NodeJS.Timeout | undefined;
 
   upstream.on("open", () => {
@@ -154,6 +162,7 @@ wss.on("connection", (client) => {
     if (isBinary) {
       if (!upstreamReady) {
         preReadyAudio.push(Buffer.from(data));
+        if (preReadyAudio.length > PRE_READY_MAX_CHUNKS) preReadyAudio.shift();
         return;
       }
       if (upstream.readyState === WebSocket.OPEN) upstream.send(data, { binary: true });
@@ -195,7 +204,7 @@ function logEvent(tag: string, evt: any) {
       break;
     case "AgentStartedSpeaking":
       console.log(
-        `${tag} <- AgentStartedSpeaking total=${(evt.total_latency * 1000) | 0}ms ttt=${(evt.ttt_latency * 1000) | 0}ms tts=${(evt.tts_latency * 1000) | 0}ms`,
+        `${tag} <- AgentStartedSpeaking total=${Math.round(evt.total_latency * 1000)}ms ttt=${Math.round(evt.ttt_latency * 1000)}ms tts=${Math.round(evt.tts_latency * 1000)}ms`,
       );
       break;
     case "Error":
