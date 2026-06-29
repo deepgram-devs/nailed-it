@@ -97,6 +97,24 @@ scrolling **timeline** column chart across the whole bit. Session stats persist 
 - **Mute (Space)** — mute/unmute the mic.
 - **Shift+R** — clear stored stats / timeline.
 
+## Demo script (run sheet)
+
+**Before you're on:**
+
+1. `npm run check` — green means both keys + the full Deepgram → Together → Aura loop work.
+2. `npm run dev`, open http://localhost:3000. Rotating **opener chips** suggest lines to try.
+3. Click **Start** to warm up the mic + socket — _don't_ cold-open live.
+4. Do one throwaway turn off-mic so the first on-stage turn isn't a cold start.
+
+**The loop (≈10 seconds each):**
+
+1. Speak the **start** of a sentence, then stop — e.g. _"The best part of waking up is…"_. Let it finish out loud.
+2. Point at the bar: **turn-taking** (derived) · **LLM** · **Aura TTS**, with the total against the 800 ms "feels instant" line.
+3. Start talking again mid-reply to show **barge-in** (it cuts off and listens).
+4. _Optional flex:_ edit `think.model` in [`config/agent.config.json`](config/agent.config.json), press **R** — the pipeline strip and latency shift live, no restart.
+
+**Recover:** socket drop → **R**. Cluttered stats → **Shift+R**. Need lines that land → [FRAGMENTS.md](FRAGMENTS.md).
+
 ## For AI agents
 
 This repo is set up to be agent-legible so you (or a developer's coding agent) can extend or

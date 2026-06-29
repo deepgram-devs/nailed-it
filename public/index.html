@@ -13,6 +13,9 @@
       <div id="status" class="status idle">press Start</div>
     </header>
 
+    <!-- Live pipeline: the real model chain, sourced from /config. Colors match the HUD bar. -->
+    <div id="pipeline" class="pipeline" aria-label="active model pipeline"></div>
+
     <main>
       <section class="stage">
         <div class="line">
@@ -23,13 +26,23 @@
           <div class="label">…the agent finishes</div>
           <div id="agentText" class="agent-text">—</div>
         </div>
+
+        <!-- Seed lines so nobody freezes. Curated from FRAGMENTS.md, rotated on a timer. -->
+        <div class="openers">
+          <span class="openers-label">try an opener</span>
+          <span id="openerChips" class="opener-chips"></span>
+          <span id="openerCountdown" class="opener-countdown">
+            <span id="openerCount" class="opener-count"></span>
+            <span class="opener-progress"><i id="openerProgress"></i></span>
+          </span>
+        </div>
       </section>
 
       <section class="hud">
         <div class="hud-head">
           <span>time to first word</span>
           <span class="legend">
-            <i class="sw teal"></i> Deepgram speech <i class="sw purple"></i> Together reasoning
+            <i class="sw flux"></i> turn-taking (derived) <i class="sw purple"></i> LLM <i class="sw teal"></i> Aura TTS
           </span>
         </div>
 

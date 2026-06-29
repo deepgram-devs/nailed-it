@@ -5,6 +5,7 @@
   --muted: #8b97a6;
   --teal: #1d9e75;
   --purple: #7f77dd;
+  --flux: #2f86a6;
   --good: #2ecc71;
   --bad: #ff5d5d;
   --hair: #1e2630;
@@ -46,6 +47,50 @@ header {
 .sub {
   color: var(--muted);
   font-size: 14px;
+}
+
+/* Live pipeline strip — the real model chain. Stage colors mirror the HUD bar segments. */
+.pipeline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 32px;
+  border-bottom: 1px solid var(--hair);
+  background: #0e141b;
+  font-size: 13px;
+  min-height: 41px;
+}
+.pipe-stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.pipe-stage .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.pipe-stage .dot.flux {
+  background: var(--flux);
+}
+.pipe-stage .dot.purple {
+  background: var(--purple);
+}
+.pipe-stage .dot.teal {
+  background: var(--teal);
+}
+.pipe-model {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pipe-co {
+  color: var(--muted);
+}
+.pipe-arrow {
+  color: var(--muted);
+  font-weight: 700;
 }
 .status {
   margin-left: auto;
@@ -126,6 +171,71 @@ main {
   color: var(--purple);
 }
 
+/* Seed-line chips — subtle prompts, not a panel. */
+.openers {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.openers-label {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-right: 4px;
+}
+.opener-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.opener-chip {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: italic;
+  padding: 4px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  white-space: nowrap;
+  animation: openerFade 0.4s ease;
+}
+@keyframes openerFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.opener-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 4px;
+}
+.opener-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.opener-progress {
+  width: 44px;
+  height: 4px;
+  background: var(--hair);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.opener-progress i {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
 .hud {
   background: var(--panel);
   border: 1px solid var(--hair);
@@ -163,6 +273,9 @@ main {
 .sw.purple {
   background: var(--purple);
 }
+.sw.flux {
+  background: var(--flux);
+}
 
 /* Headline current-turn bar — width is a % of the axis max, so it never scrolls. */
 .bars {
@@ -196,6 +309,17 @@ main {
 .seg.purple {
   background: var(--purple);
 }
+/* Derived slice (total − LLM − TTS): striped to signal it's estimated, not directly measured. */
+.seg.flux {
+  background-color: var(--flux);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.16) 0,
+    rgba(255, 255, 255, 0.16) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
 .bar-total {
   font-variant-numeric: tabular-nums;
   font-weight: 800;
@@ -208,6 +332,44 @@ main {
 }
 .bar-total.bad {
   color: var(--bad);
+}
+
+/* Per-stage breakdown under the headline bar — the three real numbers, spelled out. */
+.bar-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.brk {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+}
+.brk .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.brk .dot.flux {
+  background: var(--flux);
+}
+.brk .dot.purple {
+  background: var(--purple);
+}
+.brk .dot.teal {
+  background: var(--teal);
+}
+.brk b {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.brk .brk-tag {
+  font-size: 11px;
+  opacity: 0.8;
 }
 .threshold {
   position: absolute;
@@ -329,6 +491,9 @@ main {
 }
 .cseg.purple {
   background: var(--purple);
+}
+.cseg.flux {
+  background: var(--flux);
 }
 .timeline-foot {
   grid-row: 2;

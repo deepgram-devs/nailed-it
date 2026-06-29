@@ -11,6 +11,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(__dirname, "..", "..");
 export const PUBLIC_DIR = join(ROOT, "public");
 export const CONFIG_PATH = join(ROOT, "config", "agent.config.json");
+/** Curated opener lines — the single source of truth for both the doc and the on-screen chips. */
+export const FRAGMENTS_PATH = join(ROOT, "FRAGMENTS.md");
 
 /** Deepgram Voice Agent WebSocket. Auth via `Authorization: Token <DEEPGRAM_API_KEY>`. */
 export const DG_AGENT_URL = "wss://agent.deepgram.com/v1/agent/converse";
@@ -42,6 +44,24 @@ export function loadConfig(): AgentConfig {
 }
 
 /**
+ * The opener fragments shown on screen, parsed from FRAGMENTS.md so the doc and the page never
+ * drift. Picks the bullet lines that trail off with an ellipsis. Returns [] if the file is gone
+ * (the page just hides the chip row). Re-read per request so edits show on reload.
+ */
+export function loadOpeners(): string[] {
+  try {
+    return readFileSync(FRAGMENTS_PATH, "utf8")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("- "))
+      .map((line) => line.slice(2).trim())
+      .filter((line) => line.endsWith("…"));
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Resolve the Bearer key for the think provider, server-side. Reads the env var named by
  * `think.apiKeyEnv` (default TOGETHER_API_KEY) so swapping providers is config + key only,
  * never a code change. The returned key is injected into the Settings here and never reaches
@@ -50,6 +70,43 @@ export function loadConfig(): AgentConfig {
 export function resolveThinkApiKey(cfg: AgentConfig): { envName: string; value: string | undefined } {
   const envName = cfg.think.apiKeyEnv ?? DEFAULT_THINK_API_KEY_ENV;
   return { envName, value: process.env[envName] };
+}
+
+/**
+ * Friendly provider name derived from the (non-secret) think endpoint host. Used only for
+ * the HUD's pipeline strip so the audience can see which LLM is wired in. Falls back to the
+ * raw host, never throws.
+ */
+export function thinkProviderLabel(endpointUrl: string): string {
+  try {
+    const host = new URL(endpointUrl).host;
+    if (/together/i.test(host)) return "Together AI";
+    if (/anthropic/i.test(host)) return "Anthropic";
+    if (/openai/i.test(host)) return "OpenAI";
+    return host;
+  } catch {
+    return "custom";
+  }
+}
+
+/**
+ * Non-secret summary of what's actually wired in, for the browser HUD. Real model ids, the
+ * STT version, the Flux turn-detection knobs, and a provider label derived from the endpoint
+ * host. Deliberately omits the prompt, the endpoint auth header, and every API key — those
+ * stay server-side and must never appear in `/config`.
+ */
+export function describeAgent(cfg: AgentConfig) {
+  return {
+    listen: {
+      model: cfg.listen.model,
+      version: cfg.listen.version,
+      eotThreshold: cfg.listen.eotThreshold,
+      eagerEotThreshold: cfg.listen.eagerEotThreshold,
+      eotTimeoutMs: cfg.listen.eotTimeoutMs,
+    },
+    think: { model: cfg.think.model, provider: thinkProviderLabel(cfg.think.endpointUrl) },
+    speak: { model: cfg.speak.model },
+  };
 }
 
 /**

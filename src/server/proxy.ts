@@ -15,7 +15,15 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { WebSocket, WebSocketServer } from "ws";
 import "dotenv/config";
-import { DG_AGENT_URL, PUBLIC_DIR, buildSettings, loadConfig, resolveThinkApiKey } from "./agent";
+import {
+  DG_AGENT_URL,
+  PUBLIC_DIR,
+  buildSettings,
+  describeAgent,
+  loadConfig,
+  loadOpeners,
+  resolveThinkApiKey,
+} from "./agent";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
@@ -56,6 +64,10 @@ async function serveStatic(req: IncomingMessage, res: ServerResponse) {
         hud: cfg.hud,
         outputSampleRate: cfg.audio.outputSampleRate,
         inputSampleRate: cfg.audio.inputSampleRate,
+        // Non-secret pipeline summary for the HUD strip (no prompt, no keys). See describeAgent.
+        agent: describeAgent(cfg),
+        // Opener chips, parsed from FRAGMENTS.md — single source of truth shared with the doc.
+        openers: loadOpeners(),
       }),
     );
     return;
