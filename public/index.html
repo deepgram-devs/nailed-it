@@ -31,7 +31,7 @@
         <div class="openers">
           <span class="openers-label">try an opener</span>
           <span id="openerChips" class="opener-chips"></span>
-          <span id="openerCountdown" class="opener-countdown">
+          <span id="openerCountdown" class="opener-countdown" title="click or press P to pause / resume">
             <span id="openerCount" class="opener-count"></span>
             <span class="opener-progress"><i id="openerProgress"></i></span>
           </span>
@@ -69,7 +69,9 @@
       <button id="resetBtn" class="ghost" disabled>Reset (R)</button>
       <button id="muteBtn" class="ghost" disabled>Mute (Space)</button>
       <span id="bestEver" class="best-ever"></span>
-      <span class="hint"><kbd>R</kbd> reset socket &nbsp;·&nbsp; <kbd>Space</kbd> mute mic</span>
+      <span class="hint">
+        <kbd>R</kbd> reset socket &nbsp;·&nbsp; <kbd>Space</kbd> mute mic &nbsp;·&nbsp; <kbd>P</kbd> pause openers
+      </span>
     </footer>
 
     <script type="module" src="/app.js"></script>

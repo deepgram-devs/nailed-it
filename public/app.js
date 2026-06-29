@@ -151,8 +151,12 @@ function renderPipeline() {
 
 // Opener chips, sourced from /config (FRAGMENTS.md). Purely visual prompts, not interactive.
 // A window of OPENERS_VISIBLE rotates through the full list so guests always see fresh lines.
+// The rotation can be paused (P / click the countdown) so someone can try all three on screen.
 let openerIdx = 0;
 let openerTimer = null;
+let openerRemaining = 0;
+let openerStepSec = 0;
+let openersPaused = false;
 
 function renderOpeners() {
   const list = cfg.openers ?? [];
@@ -176,20 +180,32 @@ function renderOpeners() {
   );
 }
 
-// Restart the filling progress bar — a smooth CSS transition from empty to full over `ms`.
+// Restart the filling progress bar — a CSS animation (empty → full over `ms`) so it can be
+// frozen via animation-play-state when paused, staying in sync with the countdown number.
 function restartOpenerProgress(ms) {
   const bar = els.openerProgress;
   if (!bar) return;
-  bar.style.transition = "none";
-  bar.style.transform = "scaleX(0)";
+  bar.style.animation = "none";
   void bar.offsetWidth; // force reflow so the reset takes before we animate
-  bar.style.transition = `transform ${ms}ms linear`;
-  bar.style.transform = "scaleX(1)";
+  bar.style.animation = `openerFill ${ms}ms linear forwards`;
+  bar.style.animationPlayState = openersPaused ? "paused" : "running";
+}
+
+function updateOpenerCount() {
+  if (els.openerCount) els.openerCount.textContent = openersPaused ? "paused" : `next in ${openerRemaining}s`;
+}
+
+function beginOpenerCycle() {
+  openerRemaining = openerStepSec;
+  updateOpenerCount();
+  restartOpenerProgress(OPENERS_ROTATE_MS);
 }
 
 function startOpenerRotation() {
   if (openerTimer) clearInterval(openerTimer);
   openerIdx = 0;
+  openersPaused = false;
+  els.openerCountdown.classList.remove("paused");
   renderOpeners();
 
   const list = cfg.openers ?? [];
@@ -200,24 +216,29 @@ function startOpenerRotation() {
   }
   els.openerCountdown.style.display = "";
 
-  const stepSec = Math.round(OPENERS_ROTATE_MS / 1000);
-  let remaining = stepSec;
-  const beginCycle = () => {
-    remaining = stepSec;
-    els.openerCount.textContent = `next in ${remaining}s`;
-    restartOpenerProgress(OPENERS_ROTATE_MS);
-  };
-  beginCycle();
+  openerStepSec = Math.round(OPENERS_ROTATE_MS / 1000);
+  beginOpenerCycle();
   openerTimer = setInterval(() => {
-    remaining -= 1;
-    if (remaining <= 0) {
+    if (openersPaused) return; // frozen — hold the current trio
+    openerRemaining -= 1;
+    if (openerRemaining <= 0) {
       openerIdx = (openerIdx + OPENERS_VISIBLE) % list.length;
       renderOpeners();
-      beginCycle();
+      beginOpenerCycle();
     } else {
-      els.openerCount.textContent = `next in ${remaining}s`;
+      updateOpenerCount();
     }
   }, 1000);
+}
+
+// Freeze/resume the rotation so all three on-screen openers can be tried.
+function toggleOpenersPause() {
+  const list = cfg.openers ?? [];
+  if (list.length <= OPENERS_VISIBLE) return; // nothing is rotating
+  openersPaused = !openersPaused;
+  els.openerCountdown.classList.toggle("paused", openersPaused);
+  if (els.openerProgress) els.openerProgress.style.animationPlayState = openersPaused ? "paused" : "running";
+  updateOpenerCount();
 }
 
 const clampPct = (n) => Math.max(0, Math.min(100, n));
@@ -545,6 +566,7 @@ function toggleMute() {
 els.startBtn.addEventListener("click", () => start());
 els.resetBtn.addEventListener("click", () => started && reset());
 els.muteBtn.addEventListener("click", () => toggleMute());
+els.openerCountdown.addEventListener("click", () => toggleOpenersPause());
 
 document.addEventListener("keydown", (e) => {
   if (e.repeat) return;
@@ -555,6 +577,8 @@ document.addEventListener("keydown", (e) => {
       return;
     }
     if (started) reset();
+  } else if (e.key === "p" || e.key === "P") {
+    toggleOpenersPause();
   } else if (e.code === "Space" && started) {
     e.preventDefault();
     toggleMute();
