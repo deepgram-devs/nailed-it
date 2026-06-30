@@ -64,6 +64,17 @@ let requestId = null; // from Welcome — shown as latency provenance
 let lastUserFragment = ""; // most recent user transcript — matched against jingles to score the completion
 let verdictTimer = null;
 
+// Socket resilience: a dropped socket mid-talk auto-reconnects a few times before falling back
+// to the manual "press R" message; a client-side KeepAlive keeps the browser↔proxy leg warm so
+// an idle stretch (muted / paused for Q&A) can't get culled by an edge proxy.
+let reconnectAttempts = 0;
+let reconnectTimer = null;
+let keepAliveTimer = null;
+let intentionalClose = false; // set when WE close the socket (reset), so onclose skips auto-reconnect
+const MAX_RECONNECT = 5;
+const RECONNECT_BASE_MS = 600;
+const KEEPALIVE_MS = 5000;
+
 let turns = []; // session + restored: { total, listen, ttt, tts, under, ts }
 let store = { bestEverMs: null, lifetimeTurns: 0, recent: [] };
 
@@ -366,15 +377,26 @@ function stopMic() {
 
 // ── WebSocket to the proxy ──────────────────────────────────────────────────
 function connect() {
+  if (reconnectTimer) (clearTimeout(reconnectTimer), (reconnectTimer = null));
+  if (keepAliveTimer) (clearInterval(keepAliveTimer), (keepAliveTimer = null));
+  intentionalClose = false;
+
   const proto = location.protocol === "https:" ? "wss" : "ws";
-  ws = new WebSocket(`${proto}://${location.host}/agent`);
-  ws.binaryType = "arraybuffer";
-  setStatus("connecting", "connecting");
+  const socket = new WebSocket(`${proto}://${location.host}/agent`);
+  ws = socket;
+  socket.binaryType = "arraybuffer";
+  setStatus("connecting", reconnectAttempts ? `reconnecting (${reconnectAttempts})…` : "connecting");
   agentSpeaking = false;
   requestId = null;
   renderProvenance();
 
-  ws.onmessage = (ev) => {
+  // Keep the browser↔proxy socket from going idle during mutes/pauses. KeepAlive is a valid
+  // Deepgram frame the proxy already forwards upstream, so this is harmless if it reaches DG too.
+  keepAliveTimer = setInterval(() => {
+    if (ws === socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "KeepAlive" }));
+  }, KEEPALIVE_MS);
+
+  socket.onmessage = (ev) => {
     if (typeof ev.data !== "string") return enqueuePcm(ev.data);
     let msg;
     try {
@@ -384,10 +406,25 @@ function connect() {
     }
     handleEvent(msg);
   };
-  ws.onclose = () => {
-    if (started) setStatus("error", "socket closed — press R");
+  socket.onclose = () => {
+    if (ws !== socket) return; // superseded by a newer socket (e.g. a reset) — ignore the stale close
+    if (keepAliveTimer) (clearInterval(keepAliveTimer), (keepAliveTimer = null));
+    if (intentionalClose) {
+      intentionalClose = false;
+      return; // we closed it on purpose; reset() drives the reconnect
+    }
+    if (!started) return;
+    if (reconnectAttempts < MAX_RECONNECT) {
+      reconnectAttempts += 1;
+      // Linear backoff so a flapping connection doesn't hammer the proxy.
+      reconnectTimer = setTimeout(connect, RECONNECT_BASE_MS * reconnectAttempts);
+    } else {
+      setStatus("error", "socket closed — press R");
+    }
   };
-  ws.onerror = () => setStatus("error", "socket error — press R");
+  socket.onerror = () => {
+    if (ws === socket) setStatus("error", "socket error");
+  };
 }
 
 function handleEvent(msg) {
@@ -398,6 +435,7 @@ function handleEvent(msg) {
       renderProvenance();
       break;
     case "SettingsApplied":
+      reconnectAttempts = 0; // connection proved healthy — reset the auto-reconnect budget
       setStatus("ready", "ready — speak a fragment");
       break;
     case "UserStartedSpeaking": {
@@ -680,11 +718,28 @@ function renderBestEver() {
 async function start() {
   if (started) return;
   setRunning(true);
-  await loadConfig();
-  ensurePlayback();
-  await playCtx.resume();
-  await startMic();
-  connect();
+  reconnectAttempts = 0;
+  try {
+    await loadConfig();
+    ensurePlayback();
+    await playCtx.resume();
+    await startMic();
+    connect();
+  } catch (err) {
+    // Most commonly a blocked/busy mic. Don't strand the UI showing "running" — roll back so
+    // the operator can fix the device and hit Start again, with a message that says what broke.
+    console.error("start failed:", err);
+    stopMic();
+    setRunning(false);
+    setStatus(
+      "error",
+      err?.name === "NotAllowedError"
+        ? "mic blocked — allow access, then Start"
+        : err?.name === "NotFoundError"
+          ? "no mic found — connect one, then Start"
+          : "couldn't start — check mic, then Start",
+    );
+  }
 }
 
 async function reset() {
@@ -693,7 +748,10 @@ async function reset() {
   lastUserFragment = "";
   micMuted = false;
   els.muteBtn.textContent = "Mute (Space)";
+  reconnectAttempts = 0;
+  if (reconnectTimer) (clearTimeout(reconnectTimer), (reconnectTimer = null));
   if (ws) {
+    intentionalClose = true; // our close — don't let onclose kick off an auto-reconnect race
     try {
       ws.close();
     } catch {}
