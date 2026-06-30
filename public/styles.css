@@ -163,8 +163,10 @@ main {
   flex: 1;
   min-height: 0;
   display: grid;
-  /* Step 1 (openers) and step 3 (HUD) hug their content; step 2 (the exchange) fills the rest. */
-  grid-template-rows: auto 1fr auto;
+  /* Step 1 (openers) and step 3 (HUD) hug their content; step 2 (the exchange) fills the rest.
+     minmax(0, …) lets the exchange row shrink below its content's intrinsic height instead of
+     overflowing — without it the centered headline bleeds up into the openers and down over the HUD. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 20px;
   padding: 24px var(--gutter);
 }
@@ -201,6 +203,9 @@ main {
   justify-content: center;
   gap: 18px;
   min-height: 0;
+  /* Backstop: if the headline still can't fit the row, clip it here rather than
+     letting it overlap the openers above or the latency HUD below. */
+  overflow: hidden;
 }
 
 /* Jingle verdict — a rubber-stamp that slams in over the stage when a completion lands. */
@@ -248,13 +253,15 @@ main {
   letter-spacing: 2px;
   margin-bottom: 6px;
 }
+/* Size off whichever axis is the tighter constraint: vw keeps it big on a wide
+   projector, vh pulls it back on a short one so the exchange fits its row. */
 .user-text {
-  font-size: clamp(26px, 4.5vw, 52px);
+  font-size: clamp(22px, min(4.5vw, 5.2vh), 52px);
   font-weight: 600;
   line-height: 1.1;
 }
 .agent-text {
-  font-size: clamp(30px, 5.5vw, 66px);
+  font-size: clamp(26px, min(5.5vw, 6.4vh), 66px);
   font-weight: 800;
   line-height: 1.1;
   color: var(--purple);
@@ -887,15 +894,55 @@ kbd {
   }
 }
 
+/* Short-but-wide displays — a laptop or projector in a vertically tight aspect
+   ratio. The page can't scroll here (no-scroll demo constraint holds above 960px),
+   so reclaim vertical space: tighten the rhythm and shrink the secondary timeline
+   so the exchange headline keeps room and never has to clip. */
+@media (min-width: 961px) and (max-height: 820px) {
+  main {
+    gap: 14px;
+    padding-block: 16px;
+  }
+  .stage {
+    gap: 12px;
+  }
+  .line .label {
+    margin-bottom: 3px;
+  }
+  .hud {
+    padding: 14px 18px;
+  }
+  .hud-head {
+    margin-bottom: 10px;
+  }
+  .stats {
+    margin: 10px 0 2px;
+  }
+  .timeline-wrap {
+    margin-top: 10px;
+  }
+  .timeline {
+    height: 96px;
+  }
+}
+
+@media (min-width: 961px) and (max-height: 680px) {
+  /* Tighter still: drop the per-turn timeline entirely and let the current
+     verdict + latency bar own the limited height. */
+  .timeline-wrap {
+    display: none;
+  }
+}
+
 /* Tablet range — the vw-based stage type is tuned for a projector, so
    it reads small on a tablet held at arm's length. Scale the jingle
    text + supporting labels up so they're legible across the room. */
 @media (min-width: 601px) and (max-width: 960px) {
   .user-text {
-    font-size: clamp(34px, 6vw, 56px);
+    font-size: clamp(28px, min(6vw, 6vh), 56px);
   }
   .agent-text {
-    font-size: clamp(40px, 7.4vw, 70px);
+    font-size: clamp(32px, min(7.4vw, 7.2vh), 70px);
   }
   .line .label {
     font-size: 15px;

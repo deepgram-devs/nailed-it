@@ -745,6 +745,9 @@ async function start() {
 async function reset() {
   flushPlayback();
   hideVerdict();
+  // Wipe the on-screen exchange so a reset starts from a clean slate, not the last turn's text.
+  els.userText.textContent = "—";
+  els.agentText.textContent = "—";
   lastUserFragment = "";
   micMuted = false;
   els.muteBtn.textContent = "Mute (Space)";
